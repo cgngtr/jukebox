@@ -4,21 +4,16 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, layout, borderRadius, shadows } from '../styles';
 import HomeScreen from '../screens/home/HomeScreen';
+import SearchScreen from '../screens/search/SearchScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import ActivityScreen from '../screens/activity/ActivityScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
 import { 
   MaterialIcons, 
   Ionicons, 
   FontAwesome5,
   MaterialCommunityIcons
 } from '@expo/vector-icons';
-
-// Placeholder for screens - will be replaced with actual screens later
-const PlaceholderScreen = ({ title }: { title: string }) => (
-  <View style={styles.placeholderContainer}>
-    <Text style={styles.placeholderText}>{title} Screen</Text>
-  </View>
-);
 
 // Tab navigator types - updated with new tabs
 export type BottomTabParamList = {
@@ -31,13 +26,8 @@ export type BottomTabParamList = {
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-// For MVP, we still use placeholder screens for some tabs
-// HomeScreen, CommunityScreen and ActivityScreen are already implemented
-const SearchScreen = () => <PlaceholderScreen title="Search" />;
-const ProfileScreen = () => <PlaceholderScreen title="Profile" />;
-
 // Icon size configuration
-const ICON_SIZE = 24;
+const ICON_SIZE = 28;
 
 // Bottom tab navigation
 const BottomTabNavigator: React.FC = () => {
@@ -191,16 +181,6 @@ const BottomTabNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white', // Default background for placeholder
-  },
-  placeholderText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   iconContainer: {
     width: 40,
     height: 40,

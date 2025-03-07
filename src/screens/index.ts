@@ -7,7 +7,8 @@
 export { default as HomeScreen } from './home/HomeScreen';
 
 // Search screens
-// Will be added later
+export { default as SearchScreen } from './search/SearchScreen';
+// SearchResultsScreen will be implemented later
 
 // Community screens
 export { default as CommunityScreen } from './community/CommunityScreen';
@@ -17,7 +18,9 @@ export { default as CommunityScreen } from './community/CommunityScreen';
 export { default as ActivityScreen } from './activity/ActivityScreen';
 
 // Profile screens
-// Will be added later
+export { default as ProfileScreen } from './profile/ProfileScreen';
+// EditProfileScreen will be implemented later
+// CollectionsScreen will be implemented later
 
 // Auth screens
 // Will be added later, currently bypassed
