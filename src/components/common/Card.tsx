@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity, TouchableOpacityProps } from 'react-native';
-import { colors } from '../../styles/colors';
+import { View, StyleSheet, ViewStyle, TouchableOpacity, TouchableOpacityProps, DimensionValue } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius, shadows } from '../../styles';
 
 // Card props interface
@@ -11,7 +11,7 @@ export interface CardProps extends TouchableOpacityProps {
   pressable?: boolean;
   backgroundColor?: string;
   borderColor?: string;
-  padding?: number | string;
+  padding?: number | DimensionValue;
 }
 
 // Card component
@@ -25,6 +25,9 @@ export const Card: React.FC<CardProps> = ({
   padding,
   ...props
 }) => {
+  // Use theme to get dark/light mode colors
+  const { theme, isDarkMode } = useTheme();
+  
   // Get shadow style based on elevation
   const getShadowStyle = (): ViewStyle => {
     switch (elevation) {
@@ -41,13 +44,13 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
-  // Base card styles
+  // Base card styles with theme-aware colors
   const cardStyle: ViewStyle = {
     borderRadius: borderRadius.md,
-    backgroundColor: backgroundColor || colors.light.card,
+    backgroundColor: backgroundColor || theme.colors.card,
     padding: padding !== undefined ? padding : spacing.base,
     borderWidth: borderColor ? 1 : 0,
-    borderColor: borderColor,
+    borderColor: borderColor || (isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'),
     ...getShadowStyle(),
   };
 
