@@ -13,6 +13,7 @@ import {
   TrackDetailScreen, 
   PlaylistDetailScreen 
 } from '../screens/music/DetailScreens';
+import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
 
 // Stack navigator types
 export type AppStackParamList = {
@@ -24,6 +25,7 @@ export type AppStackParamList = {
   AlbumDetail: { id: string };
   TrackDetail: { id: string };
   PlaylistDetail: { id: string };
+  ListeningRoomScreen: { id: string };
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -116,6 +118,14 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen 
           name="PlaylistDetail" 
           component={PlaylistDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ListeningRoomScreen" 
+          component={ListeningRoomScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',
