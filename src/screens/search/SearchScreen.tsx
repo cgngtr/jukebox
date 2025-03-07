@@ -238,7 +238,14 @@ const SearchScreen: React.FC = () => {
         style={styles.searchItem}
         onPress={() => {
           setSearchQuery(item.query);
-          handleSearch();
+          // Arama sorgusunu ayarla ve hemen aramayı gerçekleştir
+          const typesToSearch = activeCategory === 'all' 
+            ? ['track', 'artist', 'album', 'playlist'] 
+            : [activeCategory.slice(0, -1)];
+          
+          setIsSearching(true);
+          saveSearchToHistory(item.query);
+          performSearch(item.query, typesToSearch);
         }}
       >
         <View style={[styles.searchIconContainer, { backgroundColor: theme.colors.card }]}>
