@@ -59,7 +59,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.welcomeText, { color: theme.colors.text.primary }]}>
@@ -126,6 +126,9 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
   },
   header: {
     paddingHorizontal: spacing.base,

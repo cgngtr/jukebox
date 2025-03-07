@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing } from '../../styles';
+import { spacing, layout } from '../../styles';
 import { Card } from '../../components';
 
 // Main CommunityScreen component
@@ -86,7 +86,7 @@ const CommunityScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
@@ -249,6 +249,9 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontWeight: '600',
+  },
+  scrollContent: {
+    paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
   },
 });
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing } from '../../styles';
+import { spacing, layout } from '../../styles';
 import { Card } from '../../components';
 
 // Activity types for display
@@ -115,7 +115,7 @@ const ActivityScreen: React.FC = () => {
         </Text>
       </View>
       
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Activity Filters */}
         <View style={styles.filters}>
           <TouchableOpacity 
@@ -177,6 +177,9 @@ const ActivityScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
   },
   header: {
     paddingHorizontal: spacing.base,

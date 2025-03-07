@@ -57,7 +57,7 @@ export const layout = {
   },
   
   // Navigation
-  tabBarHeight: 56,
+  tabBarHeight: 72,
   headerHeight: 56,
 };
 

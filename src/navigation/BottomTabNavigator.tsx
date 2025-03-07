@@ -55,26 +55,30 @@ const BottomTabNavigator: React.FC = () => {
           borderTopColor: isDarkMode ? 'transparent' : theme.colors.divider,
           borderTopWidth: isDarkMode ? 0 : StyleSheet.hairlineWidth,
           height: layout.tabBarHeight,
-          paddingBottom: isIOS ? spacing.sm : spacing.xs,
-          paddingTop: spacing.xs,
+          paddingBottom: isIOS ? spacing.xs : spacing.xxs,
+          paddingTop: spacing.xxs,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
           ...Platform.select({
             ios: {
               shadowColor: isDarkMode ? 'transparent' : 'rgba(0, 0, 0, 0.1)',
-              shadowOffset: { width: 0, height: -3 },
+              shadowOffset: { width: 0, height: -2 },
               shadowOpacity: 0.1,
-              shadowRadius: 3,
+              shadowRadius: 2,
             },
             android: {
-              elevation: isDarkMode ? 0 : 5,
+              elevation: isDarkMode ? 0 : 4,
             },
           }),
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.text.inactive,
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
-          marginTop: isIOS ? -2 : -4,
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: isIOS ? 2 : 0,
         },
         tabBarItemStyle: {
           paddingVertical: spacing.xxs,
@@ -198,11 +202,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   iconContainer: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 20,
   },
 });
 
