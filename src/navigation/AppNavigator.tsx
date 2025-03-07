@@ -32,9 +32,10 @@ const AppNavigator: React.FC = () => {
     },
   };
 
-  // For MVP, we'll set isAuthenticated to true to bypass auth
+  // For MVP, we're setting isAuthenticated to true to bypass auth screens
   // In a real app, this would come from an auth context/service
-  const isAuthenticated = false;
+  // TODO: Implement proper authentication later
+  const isAuthenticated = true; // Changed from false to true to bypass auth screens
 
   return (
     <NavigationContainer theme={navigationTheme}>
