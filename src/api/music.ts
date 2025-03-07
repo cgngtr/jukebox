@@ -134,6 +134,16 @@ export const music = {
     }
   },
 
+  // Belirli bir playlist'in detaylı bilgisini (takipçi sayısı dahil) getir
+  getPlaylistDetails: async (token: string, playlistId: string) => {
+    try {
+      return await SpotifyService.getPlaylist(token, playlistId);
+    } catch (error) {
+      console.error('Error fetching detailed playlist info:', error);
+      throw error;
+    }
+  },
+
   // Müzik kategorilerini getir
   getCategories: async (token: string, limit: number = 20, market: string = DEFAULT_MARKET) => {
     try {

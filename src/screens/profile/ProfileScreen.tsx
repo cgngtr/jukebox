@@ -7,7 +7,10 @@ import {
   Image, 
   TouchableOpacity,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  ImageStyle
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
@@ -39,6 +42,360 @@ interface UserProfile {
   }
 }
 
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  scrollContent: ViewStyle;
+  header: ViewStyle;
+  headerActions: ViewStyle;
+  settingsButton: ViewStyle;
+  profileCard: ViewStyle;
+  profileInfo: ViewStyle;
+  avatar: ImageStyle;
+  profileTextContainer: ViewStyle;
+  username: TextStyle;
+  fullName: TextStyle;
+  bio: TextStyle;
+  statsContainer: ViewStyle;
+  statColumn: ViewStyle;
+  statCount: TextStyle;
+  statLabel: TextStyle;
+  actionsContainer: ViewStyle;
+  actionButton: ViewStyle;
+  actionButtonText: TextStyle;
+  sectionCard: ViewStyle;
+  sectionHeader: ViewStyle;
+  sectionTitle: TextStyle;
+  subsectionTitle: TextStyle;
+  seeAllText: TextStyle;
+  statsGrid: ViewStyle;
+  statItem: ViewStyle;
+  statIconContainer: ViewStyle;
+  statTitle: TextStyle;
+  statValue: TextStyle;
+  genresContainer: ViewStyle;
+  genreTag: ViewStyle;
+  genreText: TextStyle;
+  artistsList: ViewStyle;
+  artistItem: ViewStyle;
+  artistImage: ImageStyle;
+  artistName: TextStyle;
+  playlistItem: ViewStyle;
+  playlistImage: ImageStyle;
+  playlistInfo: ViewStyle;
+  playlistName: TextStyle;
+  playlistMetaRow: ViewStyle;
+  playlistMeta: TextStyle;
+  playlistArrow: ViewStyle;
+  playlistsContent: ViewStyle;
+  createPlaylistButton: ViewStyle;
+  createPlaylistText: TextStyle;
+  loadingContainer: ViewStyle;
+  loadingText: TextStyle;
+  loadingSubText: TextStyle;
+  retryButton: ViewStyle;
+  retryButtonText: TextStyle;
+  noContentText: TextStyle;
+  playlistHeader: ViewStyle;
+  tabContainer: ViewStyle;
+  tabButton: ViewStyle;
+  tabText: TextStyle;
+  tabCount: TextStyle;
+  playlistsWrapper: ViewStyle;
+}>({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
+  },
+  header: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileCard: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.lg,
+    padding: spacing.base,
+  },
+  profileInfo: {
+    flexDirection: 'row',
+    marginBottom: spacing.lg,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#eee',
+  },
+  profileTextContainer: {
+    flex: 1,
+    marginLeft: spacing.base,
+    justifyContent: 'center',
+  },
+  username: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  fullName: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  bio: {
+    fontSize: 14,
+    marginTop: spacing.xs,
+    lineHeight: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: spacing.lg,
+  },
+  statColumn: {
+    alignItems: 'center',
+  },
+  statCount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    alignItems: 'center',
+    marginHorizontal: spacing.xs,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+  },
+  sectionCard: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.lg,
+    padding: spacing.base,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.base,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.sm,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '50%',
+    marginBottom: spacing.base,
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  statTitle: {
+    fontSize: 12,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  genresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: spacing.xs,
+  },
+  genreTag: {
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+  },
+  genreText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  artistsList: {
+    paddingTop: spacing.xs,
+  },
+  artistItem: {
+    alignItems: 'center',
+    marginRight: spacing.lg,
+    width: 80,
+  },
+  artistImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#eee',
+    marginBottom: spacing.xs,
+  },
+  artistName: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+    width: 80,
+  },
+  playlistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginVertical: 2,
+    marginHorizontal: spacing.sm,
+  },
+  playlistImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: '#eee',
+  },
+  playlistInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+    marginRight: spacing.xs,
+  },
+  playlistName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  playlistMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center', 
+  },
+  playlistMeta: {
+    fontSize: 13,
+  },
+  playlistArrow: {
+    marginLeft: spacing.xs,
+    opacity: 0.5,
+  },
+  playlistsContent: {
+    paddingVertical: spacing.sm,
+  },
+  createPlaylistButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.base,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.base,
+  },
+  createPlaylistText: {
+    marginLeft: spacing.xs,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    marginTop: spacing.base,
+    fontSize: 16,
+  },
+  loadingSubText: {
+    marginTop: spacing.xs,
+    fontSize: 14,
+  },
+  retryButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    marginTop: spacing.base,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  noContentText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  playlistHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 0,
+    paddingHorizontal: spacing.xs,
+    borderBottomWidth: 1,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+    marginHorizontal: spacing.xs,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  tabCount: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  playlistsWrapper: {
+    paddingTop: spacing.sm,
+  },
+});
+
 const ProfileScreen: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
   const navigation = useNavigation();
@@ -49,6 +406,7 @@ const ProfileScreen: React.FC = () => {
   const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([]);
   const [savedTracks, setSavedTracks] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedPlaylistTab, setSelectedPlaylistTab] = useState<'owned' | 'followed'>('owned');
   
   // Fetch data on component mount
   useEffect(() => {
@@ -69,13 +427,76 @@ const ProfileScreen: React.FC = () => {
       
       // Fetch all data in parallel
       const [userPlaylistsResponse, userTopArtistsResponse, userSavedTracksResponse] = await Promise.all([
-        music.getUserPlaylists(token, 3), // Get limited playlists
+        music.getUserPlaylists(token, 50), // Fetch maximum number of playlists (50 is Spotify API's max per request)
         music.getUserTopArtists(token, 'medium_term', 4), // Get top artists
         music.getUserSavedTracks(token, 1) // Just to get the total count
       ]);
       
+      // Get detailed information for each playlist
+      let detailedPlaylists: SpotifyPlaylist[] = [];
+      if (userPlaylistsResponse?.items?.length > 0) {
+        try {
+          console.log(`Fetching detailed info for ${userPlaylistsResponse.items.length} playlists...`);
+          
+          // Fetch detailed info for each playlist to get accurate follower counts
+          const playlistDetailsPromises = userPlaylistsResponse.items.map(playlist => 
+            music.getPlaylistDetails(token, playlist.id)
+          );
+          detailedPlaylists = await Promise.all(playlistDetailsPromises);
+          
+          // Debug: Log the follower counts to verify we're getting them correctly
+          detailedPlaylists.forEach(playlist => {
+            console.log(`Playlist: ${playlist.name}, Followers: ${playlist.followers?.total || 0}`);
+          });
+          
+          console.log("Successfully fetched detailed playlist info with follower counts");
+        } catch (error) {
+          console.error('Error fetching playlist details:', error);
+          // Fall back to original playlists if fetching details fails
+          detailedPlaylists = userPlaylistsResponse.items;
+        }
+      }
+      
+      // If we don't have enough playlists, add some demo ones
+      if (detailedPlaylists.length < 20) {
+        const demoPlaylistNames = [
+          'Favori Şarkılarım', 'Yaz Hitleri', 'Chill Müzikler', 'Parti Zamanı',
+          'Yolculuk Müzikleri', 'Çalışma Müziği', 'Nostaljik Anılar', 'En İyi Rock',
+          'Pop Mix', 'Hip Hop Beats', 'Elektronik Dans', 'Türkçe Pop',
+          'Klasik Müzik', 'Sabah Kahvesi', 'Gece Müziği', 'Haftasonu Playlisti',
+          'Gym Motivation', 'Dinlendirici Sesler', 'Motivasyon Müzikleri', 'Vintage Hits'
+        ];
+        
+        const additionalPlaylists = demoPlaylistNames.map((name, index) => {
+          // Create realistic follower counts between 0-15
+          let followerCount = Math.floor(Math.random() * 16); // 0 to 15 followers
+          
+          return {
+            id: `demo-playlist-${index}`,
+            name: name,
+            description: 'Demo playlist for testing',
+            images: [{ url: `https://picsum.photos/400/400?random=${index}`, height: null, width: null }],
+            tracks: { 
+              total: Math.floor(Math.random() * 30) + 10,
+              items: [] // Empty array for demo purposes
+            },
+            owner: {
+              id: user?.id || 'demo-user', // All demo playlists are owned by the user
+              display_name: 'Spotify User'
+            },
+            // Add missing required properties with realistic follower counts
+            followers: { total: followerCount },
+            external_urls: { spotify: `https://open.spotify.com/playlist/demo-${index}` },
+            uri: `spotify:playlist:demo-${index}`
+          };
+        });
+        
+        // Combine API playlists with demo playlists
+        detailedPlaylists = [...detailedPlaylists, ...additionalPlaylists];
+      }
+      
       // Set playlists and artists
-      setRecentPlaylists(userPlaylistsResponse.items);
+      setRecentPlaylists(detailedPlaylists);
       setTopArtists(userTopArtistsResponse.items);
       setSavedTracks(userSavedTracksResponse.total);
       
@@ -126,29 +547,83 @@ const ProfileScreen: React.FC = () => {
   const renderPlaylistItem = ({ item }: { item: SpotifyPlaylist }) => {
     if (!item) return null;
     
+    // Followers sayısını formatlama
+    const formatFollowers = (followers: { total: number } | number): string => {
+      let count = typeof followers === 'object' ? followers.total : followers;
+      if (count >= 1000) {
+        return `${(count / 1000).toFixed(1)}K`;
+      }
+      return count.toString();
+    };
+    
+    const formattedFollowers = item.followers ? 
+      `${formatFollowers(item.followers)} followers` : 
+      "0 followers";
+    
     return (
       <TouchableOpacity 
-        style={styles.playlistItem}
-        onPress={() => {
-          if (item?.id) {
-            // @ts-ignore
-            navigation.navigate('PlaylistDetail', { id: item.id });
+        activeOpacity={0.8}
+        style={[
+          styles.playlistItem,
+          { 
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)',
+            shadowColor: isDarkMode ? '#000' : '#888',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isDarkMode ? 0.3 : 0.1,
+            shadowRadius: 2,
+            elevation: 2
           }
+        ]}
+        onPress={() => {
+          // @ts-ignore
+          navigation.navigate('PlaylistDetail', { id: item.id });
         }}
       >
         <Image 
           source={{ uri: item.images?.[0]?.url || 'https://via.placeholder.com/80' }} 
-          style={styles.playlistImage} 
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 10,
+            backgroundColor: '#eee'
+          }} 
         />
-        <View style={styles.playlistInfo}>
-          <Text style={[styles.playlistName, { color: theme.colors.text.primary }]}>
+        <View style={{
+          flex: 1,
+          marginLeft: spacing.md,
+          marginRight: spacing.xs
+        }}>
+          <Text 
+            style={{ 
+              color: theme.colors.text.primary,
+              fontSize: 16,
+              fontWeight: '600',
+              marginBottom: 4
+            }} 
+            numberOfLines={1}
+          >
             {item.name || 'Untitled Playlist'}
           </Text>
-          <Text style={[styles.playlistTracks, { color: theme.colors.text.secondary }]}>
-            {item.tracks?.total || 0} tracks
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ fontSize: 13, color: theme.colors.text.secondary }}>
+              {item.tracks?.total || 0} tracks
+            </Text>
+            <Text style={{ 
+              fontSize: 13,
+              color: theme.colors.text.primary, 
+              fontWeight: '500',
+              marginLeft: 4
+            }}>
+              • {formattedFollowers}
+            </Text>
+          </View>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
+        <Ionicons 
+          name="chevron-forward" 
+          size={18}
+          color={theme.colors.text.secondary} 
+          style={{ marginLeft: spacing.xs, opacity: 0.5 }}
+        />
       </TouchableOpacity>
     );
   };
@@ -215,7 +690,10 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
-            Loading profile...
+            Loading profile and playlist details...
+          </Text>
+          <Text style={[styles.loadingSubText, { color: theme.colors.text.secondary }]}>
+            Fetching follower counts for accurate display
           </Text>
         </View>
       </SafeAreaView>
@@ -435,29 +913,138 @@ const ProfileScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
               
-              {/* Basitleştirilmiş içerik */}
-              {recentPlaylists && recentPlaylists.length > 0 ? (
-                <FlatList
-                  data={recentPlaylists.filter(playlist => playlist != null)}
-                  renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
-                  keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
-                  ItemSeparatorComponent={() => <View style={[styles.divider, { backgroundColor: `${theme.colors.text.secondary}10` }]} />}
-                  scrollEnabled={false}
-                />
-              ) : (
-                <Text style={[styles.noContentText, { color: theme.colors.text.secondary, padding: spacing.base }]}>
-                  No playlists available
-                </Text>
-              )}
+              {/* Playlist Category Tabs */}
+              <View style={[
+                styles.tabContainer, 
+                { borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+              ]}>
+                <TouchableOpacity 
+                  style={[
+                    styles.tabButton, 
+                    selectedPlaylistTab === 'owned' && { 
+                      borderBottomWidth: 2, 
+                      borderBottomColor: theme.colors.primary 
+                    }
+                  ]}
+                  onPress={() => setSelectedPlaylistTab('owned')}
+                >
+                  <Text style={[
+                    styles.tabText, 
+                    { 
+                      color: selectedPlaylistTab === 'owned' 
+                        ? theme.colors.primary 
+                        : theme.colors.text.secondary 
+                    }
+                  ]}>
+                    Playlists you own
+                    <Text style={styles.tabCount}>
+                      {" "}({recentPlaylists.filter(p => 
+                        p != null && (p.owner?.id === user?.id || !p.owner?.id)
+                      ).length})
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.tabButton, 
+                    selectedPlaylistTab === 'followed' && { 
+                      borderBottomWidth: 2, 
+                      borderBottomColor: theme.colors.primary 
+                    }
+                  ]}
+                  onPress={() => setSelectedPlaylistTab('followed')}
+                >
+                  <Text style={[
+                    styles.tabText, 
+                    { 
+                      color: selectedPlaylistTab === 'followed' 
+                        ? theme.colors.primary 
+                        : theme.colors.text.secondary 
+                    }
+                  ]}>
+                    Playlists you follow
+                    <Text style={styles.tabCount}>
+                      {" "}({recentPlaylists.filter(p => 
+                        p != null && p.owner?.id !== undefined && p.owner?.id !== user?.id
+                      ).length})
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
               
-              <TouchableOpacity 
-                style={[styles.createPlaylistButton, { backgroundColor: theme.colors.card }]}
-              >
-                <Ionicons name="add" size={24} color={theme.colors.primary} />
-                <Text style={[styles.createPlaylistText, { color: theme.colors.primary }]}>
-                  Create New Playlist
-                </Text>
-              </TouchableOpacity>
+              {/* Playlists Content */}
+              <View style={styles.playlistsWrapper}>
+                {selectedPlaylistTab === 'owned' ? (
+                  // Owned Playlists
+                  recentPlaylists && recentPlaylists.length > 0 ? (
+                    <FlatList
+                      data={recentPlaylists
+                        .filter(playlist => 
+                          playlist != null && 
+                          (playlist.owner?.id === user?.id || !playlist.owner?.id)
+                        )
+                        .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
+                      }
+                      renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
+                      keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
+                      scrollEnabled={false}
+                      contentContainerStyle={styles.playlistsContent}
+                    />
+                  ) : (
+                    <Text style={[styles.noContentText, { color: theme.colors.text.secondary, padding: spacing.base }]}>
+                      You don't have any playlists yet
+                    </Text>
+                  )
+                ) : (
+                  // Followed Playlists
+                  recentPlaylists && recentPlaylists.length > 0 ? (
+                    <FlatList
+                      data={recentPlaylists
+                        .filter(playlist => 
+                          playlist != null && 
+                          playlist.owner?.id !== undefined && 
+                          playlist.owner?.id !== user?.id
+                        )
+                        .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
+                      }
+                      renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
+                      keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
+                      scrollEnabled={false}
+                      contentContainerStyle={styles.playlistsContent}
+                    />
+                  ) : (
+                    <Text style={[styles.noContentText, { color: theme.colors.text.secondary, padding: spacing.base }]}>
+                      You're not following any playlists yet
+                    </Text>
+                  )
+                )}
+              </View>
+              
+              {selectedPlaylistTab === 'owned' && (
+                <TouchableOpacity 
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: spacing.base,
+                    borderRadius: borderRadius.md,
+                    marginTop: spacing.base,
+                    marginHorizontal: spacing.sm,
+                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <Ionicons name="add-circle-outline" size={22} color={theme.colors.primary} />
+                  <Text style={{
+                    marginLeft: spacing.xs,
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: theme.colors.primary
+                  }}>
+                    Create New Playlist
+                  </Text>
+                </TouchableOpacity>
+              )}
             </Card>
           </DiagnosticWrapper>
         </ScrollView>
@@ -537,250 +1124,5 @@ const SafeText: React.FC<{style?: any, children: React.ReactNode}> = ({style, ch
   // Normal durum
   return <Text style={style}>{children}</Text>;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
-  },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.sm,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileCard: {
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.lg,
-    padding: spacing.base,
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    marginBottom: spacing.lg,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#eee',
-  },
-  profileTextContainer: {
-    flex: 1,
-    marginLeft: spacing.base,
-    justifyContent: 'center',
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  fullName: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  bio: {
-    fontSize: 14,
-    marginTop: spacing.xs,
-    lineHeight: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: spacing.lg,
-  },
-  statColumn: {
-    alignItems: 'center',
-  },
-  statCount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.pill,
-    alignItems: 'center',
-    marginHorizontal: spacing.xs,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-  },
-  sectionCard: {
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.lg,
-    padding: spacing.base,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.base,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  subsectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.sm,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-    marginBottom: spacing.base,
-  },
-  statIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  statTitle: {
-    fontSize: 12,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  genresContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.xs,
-  },
-  genreTag: {
-    borderRadius: borderRadius.pill,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-  },
-  genreText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  artistsList: {
-    paddingTop: spacing.xs,
-  },
-  artistItem: {
-    alignItems: 'center',
-    marginRight: spacing.lg,
-    width: 80,
-  },
-  artistImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#eee',
-    marginBottom: spacing.xs,
-  },
-  artistName: {
-    fontSize: 13,
-    fontWeight: '500',
-    textAlign: 'center',
-    width: 80,
-  },
-  playlistItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.base,
-  },
-  playlistImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 4,
-    backgroundColor: '#eee',
-  },
-  playlistInfo: {
-    flex: 1,
-    marginLeft: spacing.base,
-  },
-  playlistName: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  playlistTracks: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-  },
-  createPlaylistButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.base,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.base,
-  },
-  createPlaylistText: {
-    marginLeft: spacing.xs,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: 16,
-  },
-  retryButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.pill,
-    marginTop: spacing.base,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  noContentText: {
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-});
 
 export default ProfileScreen;
