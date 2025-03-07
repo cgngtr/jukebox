@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Button } from '../components';
+import LoginScreen from '../screens/auth/LoginScreen';
 
 // Placeholder for auth screens - will be replaced with actual screens later
 const AuthPlaceholder = ({ 
@@ -52,15 +53,6 @@ export type AuthStackParamList = {
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 // Placeholder screens - will be replaced with actual screens
-const LoginScreen = ({ navigation }: any) => (
-  <AuthPlaceholder 
-    title="Login to Jukebox" 
-    navigateTo="Register"
-    navigateLabel="Don't have an account? Sign up"
-    navigation={navigation}
-  />
-);
-
 const RegisterScreen = ({ navigation }: any) => (
   <AuthPlaceholder 
     title="Create a Jukebox Account" 

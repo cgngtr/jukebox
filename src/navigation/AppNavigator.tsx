@@ -1,9 +1,10 @@
-import React from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer, DefaultTheme, CommonActions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthNavigator from './AuthNavigator';
 import BottomTabNavigator from './BottomTabNavigator';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import SpotifyTestScreen from '../screens/SpotifyTestScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import { 
@@ -30,6 +31,15 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 // App navigation structure
 const AppNavigator: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [initialRoute, setInitialRoute] = useState<keyof AppStackParamList>('Auth');
+  
+  // Auth durumu değiştiğinde initial route'u belirle
+  useEffect(() => {
+    if (!isLoading) {
+      setInitialRoute(isAuthenticated ? 'Main' : 'Auth');
+    }
+  }, [isAuthenticated, isLoading]);
   
   // Using DefaultTheme as base and overriding colors
   const navigationTheme = {
@@ -46,10 +56,10 @@ const AppNavigator: React.FC = () => {
     },
   };
 
-  // For MVP, we're setting isAuthenticated to true to bypass auth screens
-  // In a real app, this would come from an auth context/service
-  // TODO: Implement proper authentication later
-  const isAuthenticated = true; // Changed from false to true to bypass auth screens
+  // Yükleme sırasında ekranı göster
+  if (isLoading) {
+    return null; // veya bir loading ekranı gösterilebilir
+  }
 
   return (
     <NavigationContainer theme={navigationTheme}>
@@ -58,7 +68,7 @@ const AppNavigator: React.FC = () => {
           headerShown: false,
           animation: 'fade',
         }}
-        initialRouteName={isAuthenticated ? 'Main' : 'Auth'}
+        initialRouteName={initialRoute}
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Main" component={BottomTabNavigator} />

@@ -71,19 +71,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Spotify oturumu açma
   const login = async () => {
     try {
+      console.log('Login başlatılıyor...');
       setIsLoading(true);
       
       // Spotify yetkilendirme URL'ini al
       const authUrl = auth.getAuthUrl();
+      console.log('Auth URL alındı:', authUrl.substring(0, 50) + '...');
       
       // Mobil için ExpoWebBrowser, web için window kullan
       if (Platform.OS !== 'web') {
+        console.log('Mobil platform için tarayıcı açılıyor...');
         // Web tarayıcısı aç
         const result = await WebBrowser.openAuthSessionAsync(authUrl);
+        console.log('Tarayıcı sonucu:', result.type);
         
         if (result.type === 'success') {
+          console.log('Başarılı yetkilendirme. Yönlendirme URL:', result.url.substring(0, 50) + '...');
           // Başarılı yetkilendirme yönlendirmesi
           await handleAuthRedirect(result.url);
+          console.log('handleAuthRedirect tamamlandı. isAuthenticated:', isAuthenticated);
+        } else {
+          console.log('Kullanıcı yetkilendirmeyi iptal etti veya hata oluştu.');
         }
       } else {
         // Web için window.location kullan
@@ -93,28 +101,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error during login:', error);
     } finally {
       setIsLoading(false);
+      console.log('Login işlemi tamamlandı. isAuthenticated:', isAuthenticated);
     }
   };
 
   // Auth yönlendirmesini işle
   const handleAuthRedirect = async (url: string) => {
     try {
+      console.log('handleAuthRedirect başlatılıyor...');
       setIsLoading(true);
       
       // URL'den code parametresini çıkar
       const code = new URL(url).searchParams.get('code');
       
       if (!code) {
+        console.log('URL\'de code parametresi bulunamadı');
         throw new Error('No code parameter found in the redirect URL');
       }
       
+      console.log('Code parametresi alındı, token talep ediliyor...');
       // Code ile token al
       await auth.getAccessToken(code);
       
+      console.log('Access token alındı, kullanıcı bilgileri getiriliyor...');
       // Kullanıcı bilgilerini getir
       const userInfo = await auth.getCurrentUser();
+      console.log('Kullanıcı bilgileri alındı:', userInfo.display_name);
+      
       setUser(userInfo);
       setIsAuthenticated(true);
+      console.log('Kimlik doğrulama tamamlandı, isAuthenticated=true olarak ayarlandı');
     } catch (error) {
       console.error('Error handling auth redirect:', error);
       setUser(null);
