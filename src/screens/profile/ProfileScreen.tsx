@@ -18,6 +18,7 @@ import {
   MaterialCommunityIcons 
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import SpotifyTestScreen from '../SpotifyTestScreen';
 
 // Mock data for profile
 const userProfile = {
@@ -111,8 +112,14 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.header}>
           <View style={styles.headerActions}>
             <View style={{ width: 40 }} /> {/* Placeholder for balance */}
-            <TouchableOpacity style={[styles.settingsButton, { backgroundColor: theme.colors.card }]}>
-              <Ionicons name="settings-outline" size={20} color={theme.colors.text.primary} />
+            <TouchableOpacity 
+              style={[styles.settingsButton, { backgroundColor: theme.colors.card }]}
+              onPress={() => {
+                // @ts-ignore - StackNavigator tipi tanımlı olmadığı için
+                navigation.navigate('Settings');
+              }}
+            >
+              <Ionicons name="settings" size={20} color={theme.colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
