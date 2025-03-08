@@ -307,7 +307,7 @@ const styles = StyleSheet.create<{
   },
   playlistMetaRow: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center'
   },
   playlistMeta: {
     fontSize: 13,
@@ -415,7 +415,39 @@ const ProfileScreen: React.FC = () => {
     }
   }, [isAuthenticated]);
   
-  // Fetch all user data
+  // Make a new helper function to properly update the userProfile with counts
+  const updateProfileCounts = (
+    followersCount: number | null = null, 
+    followingCount: number | null = null, 
+    playlistsCount: number | null = null,
+    songsLikedCount: number | null = null
+  ) => {
+    console.log(
+      `Updating profile counts - Followers: ${followersCount}, Following: ${followingCount}, ` +
+      `Playlists: ${playlistsCount}, Songs Liked: ${songsLikedCount}`
+    );
+    
+    setUserProfile(prev => {
+      if (!prev) return prev;
+      
+      // Only update fields that are provided (not null)
+      const updatedProfile = { ...prev };
+      
+      if (followersCount !== null) updatedProfile.followers = followersCount;
+      if (followingCount !== null) updatedProfile.following = followingCount;
+      if (playlistsCount !== null) updatedProfile.playlists = playlistsCount;
+      if (songsLikedCount !== null) {
+        updatedProfile.stats = {
+          ...updatedProfile.stats,
+          songsLiked: songsLikedCount
+        };
+      }
+      
+      return updatedProfile;
+    });
+  };
+
+  // Update the fetchUserData function to use our new helper
   const fetchUserData = async () => {
     try {
       setIsLoading(true);
@@ -425,119 +457,227 @@ const ProfileScreen: React.FC = () => {
         throw new Error('No access token available');
       }
       
-      // Fetch all data in parallel
-      const [userPlaylistsResponse, userTopArtistsResponse, userSavedTracksResponse] = await Promise.all([
-        music.getUserPlaylists(token, 50), // Fetch maximum number of playlists (50 is Spotify API's max per request)
-        music.getUserTopArtists(token, 'medium_term', 4), // Get top artists
-        music.getUserSavedTracks(token, 1) // Just to get the total count
-      ]);
+      // Initialize default values in case any API call fails
+      let playlistsCount = 0;
+      let followingCount = 0;
+      let savedTracksCount = 0;
+      let topArtistsData: SpotifyArtist[] = [];
+      let playlistsData: SpotifyPlaylist[] = [];
       
-      // Get detailed information for each playlist
-      let detailedPlaylists: SpotifyPlaylist[] = [];
-      if (userPlaylistsResponse?.items?.length > 0) {
-        try {
-          console.log(`Fetching detailed info for ${userPlaylistsResponse.items.length} playlists...`);
-          
-          // Fetch detailed info for each playlist to get accurate follower counts
-          const playlistDetailsPromises = userPlaylistsResponse.items.map(playlist => 
-            music.getPlaylistDetails(token, playlist.id)
-          );
-          detailedPlaylists = await Promise.all(playlistDetailsPromises);
-          
-          // Debug: Log the follower counts to verify we're getting them correctly
-          detailedPlaylists.forEach(playlist => {
-            console.log(`Playlist: ${playlist.name}, Followers: ${playlist.followers?.total || 0}`);
-          });
-          
-          console.log("Successfully fetched detailed playlist info with follower counts");
-        } catch (error) {
-          console.error('Error fetching playlist details:', error);
-          // Fall back to original playlists if fetching details fails
-          detailedPlaylists = userPlaylistsResponse.items;
-        }
-      }
-      
-      // If we don't have enough playlists, add some demo ones
-      if (detailedPlaylists.length < 20) {
-        const demoPlaylistNames = [
-          'Favori Şarkılarım', 'Yaz Hitleri', 'Chill Müzikler', 'Parti Zamanı',
-          'Yolculuk Müzikleri', 'Çalışma Müziği', 'Nostaljik Anılar', 'En İyi Rock',
-          'Pop Mix', 'Hip Hop Beats', 'Elektronik Dans', 'Türkçe Pop',
-          'Klasik Müzik', 'Sabah Kahvesi', 'Gece Müziği', 'Haftasonu Playlisti',
-          'Gym Motivation', 'Dinlendirici Sesler', 'Motivasyon Müzikleri', 'Vintage Hits'
-        ];
-        
-        const additionalPlaylists = demoPlaylistNames.map((name, index) => {
-          // Create realistic follower counts between 0-15
-          let followerCount = Math.floor(Math.random() * 16); // 0 to 15 followers
-          
-          return {
-            id: `demo-playlist-${index}`,
-            name: name,
-            description: 'Demo playlist for testing',
-            images: [{ url: `https://picsum.photos/400/400?random=${index}`, height: null, width: null }],
-            tracks: { 
-              total: Math.floor(Math.random() * 30) + 10,
-              items: [] // Empty array for demo purposes
-            },
-            owner: {
-              id: user?.id || 'demo-user', // All demo playlists are owned by the user
-              display_name: 'Spotify User'
-            },
-            // Add missing required properties with realistic follower counts
-            followers: { total: followerCount },
-            external_urls: { spotify: `https://open.spotify.com/playlist/demo-${index}` },
-            uri: `spotify:playlist:demo-${index}`
-          };
-        });
-        
-        // Combine API playlists with demo playlists
-        detailedPlaylists = [...detailedPlaylists, ...additionalPlaylists];
-      }
-      
-      // Set playlists and artists
-      setRecentPlaylists(detailedPlaylists);
-      setTopArtists(userTopArtistsResponse.items);
-      setSavedTracks(userSavedTracksResponse.total);
-      
-      // Extract genres from top artists
-      const genres = userTopArtistsResponse.items
-        .flatMap(artist => artist.genres || [])
-        .filter(Boolean);
-      
-      // Count genres and get top ones
-      const genreCounts = genres.reduce((acc, genre) => {
-        if (typeof genre === 'string' && genre.trim() !== '') {
-          acc[genre] = (acc[genre] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
-      
-      const topGenres = Object.entries(genreCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 4)
-        .map(([genre]) => genre)
-        .filter(genre => typeof genre === 'string' && genre.trim() !== '');
-      
-      // Construct user profile
+      // Create a basic profile with user data we already have
       if (user) {
         setUserProfile({
           username: user.display_name || 'Music Lover',
           fullName: user.display_name || '',
-          bio: `${user.product === 'premium' ? 'Premium' : 'Free'} User | ${topGenres[0] || ''} Enthusiast`,
+          bio: `${user.product === 'premium' ? 'Premium' : 'Free'} User`,
           avatar: user.images?.[0]?.url || 'https://randomuser.me/api/portraits/men/32.jpg',
           followers: user.followers?.total || 0,
-          following: 0, // This isn't available directly from Spotify API
-          playlists: userPlaylistsResponse.total,
+          following: 0, // Will be updated later
+          playlists: 0, // Will be updated later
           stats: {
-            minutesListened: Math.floor(Math.random() * 10000) + 5000, // Random approximation
-            topGenres: topGenres,
-            songsLiked: userSavedTracksResponse.total
+            minutesListened: Math.floor(Math.random() * 10000) + 5000,
+            topGenres: [],
+            songsLiked: 0
           }
         });
       }
+      
+      try {
+        // First, fetch playlist data
+        console.log('Fetching user playlists...');
+        const userPlaylistsResponse = await music.getUserPlaylists(token, 50);
+        
+        // Log the full playlists response to debug
+        console.log(`Playlists response: ${JSON.stringify({
+          total: userPlaylistsResponse?.total,
+          itemsCount: userPlaylistsResponse?.items?.length
+        })}`);
+        
+        playlistsCount = userPlaylistsResponse?.total || 0;
+        playlistsData = userPlaylistsResponse?.items || [];
+        console.log(`Total playlists: ${playlistsCount}`);
+        
+        // Update the profile with the playlist count as soon as we have it
+        console.log(`Updating playlists count to: ${playlistsCount}`);
+        updateProfileCounts(null, null, playlistsCount, null);
+        
+        // Get detailed information for each playlist
+        let detailedPlaylists: SpotifyPlaylist[] = [];
+        if (playlistsData.length > 0) {
+          try {
+            console.log(`Fetching detailed info for ${playlistsData.length} playlists...`);
+            
+            // Fetch detailed info for each playlist to get accurate follower counts
+            const playlistDetailsPromises = playlistsData.map(playlist => 
+              music.getPlaylistDetails(token, playlist.id)
+            );
+            detailedPlaylists = await Promise.all(playlistDetailsPromises);
+            
+            // Debug: Log the follower counts to verify we're getting them correctly
+            detailedPlaylists.forEach(playlist => {
+              console.log(`Playlist: ${playlist.name}, Followers: ${playlist.followers?.total || 0}`);
+            });
+            
+            console.log("Successfully fetched detailed playlist info with follower counts");
+          } catch (error) {
+            console.error('Error fetching playlist details:', error);
+            // Fall back to original playlists if fetching details fails
+            detailedPlaylists = playlistsData;
+          }
+        }
+        
+        // If we don't have enough playlists, add some demo ones
+        if (detailedPlaylists.length < 20) {
+          const demoPlaylistNames = [
+            'Favori Şarkılarım', 'Yaz Hitleri', 'Chill Müzikler', 'Parti Zamanı',
+            'Yolculuk Müzikleri', 'Çalışma Müziği', 'Nostaljik Anılar', 'En İyi Rock',
+            'Pop Mix', 'Hip Hop Beats', 'Elektronik Dans', 'Türkçe Pop',
+            'Klasik Müzik', 'Sabah Kahvesi', 'Gece Müziği', 'Haftasonu Playlisti',
+            'Gym Motivation', 'Dinlendirici Sesler', 'Motivasyon Müzikleri', 'Vintage Hits'
+          ];
+          
+          const additionalPlaylists = demoPlaylistNames.map((name, index) => {
+            // Create realistic follower counts between 0-15
+            let followerCount = Math.floor(Math.random() * 16); // 0 to 15 followers
+            
+            return {
+              id: `demo-playlist-${index}`,
+              name: name,
+              description: 'Demo playlist for testing',
+              images: [{ url: `https://picsum.photos/400/400?random=${index}`, height: null, width: null }],
+              tracks: { 
+                total: Math.floor(Math.random() * 30) + 10,
+                items: [] // Empty array for demo purposes
+              },
+              owner: {
+                id: user?.id || 'demo-user', // All demo playlists are owned by the user
+                display_name: 'Spotify User'
+              },
+              // Add missing required properties with realistic follower counts
+              followers: { total: followerCount },
+              external_urls: { spotify: `https://open.spotify.com/playlist/demo-${index}` },
+              uri: `spotify:playlist:demo-${index}`
+            };
+          });
+          
+          // Combine API playlists with demo playlists
+          detailedPlaylists = [...detailedPlaylists, ...additionalPlaylists];
+        }
+        
+        // Set playlists data
+        setRecentPlaylists(detailedPlaylists || []);
+      } catch (error) {
+        console.error('Error fetching playlists:', error);
+        setRecentPlaylists([]);
+      }
+      
+      try {
+        // Fetch top artists
+        console.log('Fetching user top artists...');
+        const userTopArtistsResponse = await music.getUserTopArtists(token, 'medium_term', 4);
+        topArtistsData = userTopArtistsResponse?.items || [];
+        setTopArtists(topArtistsData);
+        
+        // Extract genres from top artists
+        const genres = topArtistsData
+          .flatMap(artist => artist.genres || [])
+          .filter(Boolean);
+        
+        // Count genres and get top ones
+        const genreCounts = genres.reduce((acc, genre) => {
+          if (typeof genre === 'string' && genre.trim() !== '') {
+            acc[genre] = (acc[genre] || 0) + 1;
+          }
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const topGenres = Object.entries(genreCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map(([genre]) => genre)
+          .filter(genre => typeof genre === 'string' && genre.trim() !== '');
+          
+        // Store top genres for profile
+        if (user) {
+          // Construct user profile with what we have so far
+          setUserProfile({
+            username: user.display_name || 'Music Lover',
+            fullName: user.display_name || '',
+            bio: `${user.product === 'premium' ? 'Premium' : 'Free'} User | ${topGenres[0] || ''} Enthusiast`,
+            avatar: user.images?.[0]?.url || 'https://randomuser.me/api/portraits/men/32.jpg',
+            followers: user.followers?.total || 0,
+            following: 0, // Will be updated later when we get the data
+            playlists: playlistsCount,
+            stats: {
+              minutesListened: Math.floor(Math.random() * 10000) + 5000, // Random approximation
+              topGenres: topGenres,
+              songsLiked: 0 // Will be updated later
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching top artists:', error);
+      }
+      
+      try {
+        // Fetch saved tracks count
+        console.log('Fetching saved tracks count...');
+        const userSavedTracksResponse = await music.getUserSavedTracks(token, 1);
+        savedTracksCount = userSavedTracksResponse?.total || 0;
+        setSavedTracks(savedTracksCount);
+        
+        // Update the profile with the saved tracks count
+        updateProfileCounts(null, null, null, savedTracksCount);
+      } catch (error) {
+        console.error('Error fetching saved tracks:', error);
+      }
+      
+      try {
+        // Fetch followed artists count
+        console.log('Fetching followed artists count...');
+        const userFollowedArtistsResponse = await music.getUserFollowedArtists(token, 50);
+        
+        // Log the full followed artists response to debug
+        console.log(`Followed artists response summary: ${JSON.stringify({
+          total: userFollowedArtistsResponse?.total,
+          itemsCount: userFollowedArtistsResponse?.items?.length
+        })}`);
+        
+        followingCount = userFollowedArtistsResponse?.total || 0;
+        console.log(`Followed artists count: ${followingCount}`);
+        
+        // Update the profile with the following count
+        console.log(`Updating following count to: ${followingCount}`);
+        updateProfileCounts(null, followingCount, null, null);
+        
+        console.log(`User profile data check:`);
+        if (userProfile) {
+          console.log(`- Current profile state: ${JSON.stringify({
+            followers: userProfile.followers,
+            following: userProfile.following,
+            playlists: userProfile.playlists
+          })}`);
+        } else {
+          console.log("- User profile not set yet");
+        }
+      } catch (error) {
+        console.error('Error fetching followed artists:', error);
+      }
+      
+      // Final check to ensure the profile has the correct counts
+      if (userProfile) {
+        const shouldUpdate = 
+          (userProfile.following !== followingCount && followingCount > 0) || 
+          (userProfile.playlists !== playlistsCount && playlistsCount > 0);
+          
+        if (shouldUpdate) {
+          console.log(`Final update to ensure counts are correct: Following=${followingCount}, Playlists=${playlistsCount}`);
+          updateProfileCounts(null, followingCount > 0 ? followingCount : null, playlistsCount > 0 ? playlistsCount : null, null);
+        }
+      }
+      
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error in fetchUserData:', error);
     } finally {
       setIsLoading(false);
     }

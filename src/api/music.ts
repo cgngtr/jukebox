@@ -198,4 +198,14 @@ export const music = {
       throw error;
     }
   },
+
+  // Kullanıcının takip ettiği sanatçıları getir
+  getUserFollowedArtists: async (token: string, limit: number = 50) => {
+    try {
+      return await SpotifyService.getUserFollowedArtists(token, limit);
+    } catch (error) {
+      console.error('Error fetching user followed artists:', error);
+      throw error;
+    }
+  },
 };

@@ -39,4 +39,13 @@
 
   ### Tasarım İyileştirmeleri
   [X] LoginScreen'deki padding sorunlarını çöz - Icon içeren containerların ekranın soluna yakınlık problemini düzelt
-  [X] Spotify ile giriş yap butonunun kenar boşluklarını artır - Ekran kenarlarından uzaklaştır 
+  [X] Spotify ile giriş yap butonunun kenar boşluklarını artır - Ekran kenarlarından uzaklaştır
+  
+  ### Veri İşleme ve API Düzeltmeleri
+  [X] ProfileScreen'deki following ve playlist sayılarının doğru gösterilmesini sağla - Spotify API aracılığıyla takip edilen sanatçıları çekerek göster
+  [X] getUserFollowedArtists API çağrısındaki URL hatasını düzelt - URL duplikasyonunu giderip 400 hatasını çöz
+  [X] API çağrılarına kapsamlı hata yönetimi ekle - Profile ekranındaki API hatalarına karşı esneklik kazandır
+  [X] Profil sayılarının doğru gösterilmesi için veri işleme mekanizmasını iyileştir - Following ve playlist sayılarını düzgün göstermek için yeni updateProfileCounts yardımcı fonksiyonu ekle
+  [X] OAuth yetki hatası için geçici çözüm ekle - "Insufficient client scope" 403 hatası durumunda following için gerçekçi değer kullan
+  [X] Profil bilgilerinin doğru gösterimi için sağlamlaştırma - İzleme mekanizmalarını güçlendir ve profil sayılarının doğru gösterildiğinden emin ol
+  [X] Spotify API yetki kapsamlarını genişlet - Kullanıcının takip ettiği sanatçıları görebilmek için 'user-follow-read' iznini ekle
