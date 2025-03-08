@@ -207,6 +207,33 @@ const HomeScreen: React.FC = () => {
     // @ts-ignore
     navigation.navigate('TrackDetail', { id: trackId });
   };
+  
+  // Navigate to see all new releases
+  const navigateToAllNewReleases = () => {
+    // @ts-ignore
+    navigation.navigate('AllNewReleases', { 
+      title: 'New Releases',
+      albums: newReleases
+    });
+  };
+  
+  // Navigate to see all top tracks
+  const navigateToAllTopTracks = () => {
+    // @ts-ignore
+    navigation.navigate('AllTracks', { 
+      title: 'Your Top Tracks',
+      tracks: topTracks
+    });
+  };
+  
+  // Navigate to see all featured playlists
+  const navigateToAllFeaturedPlaylists = () => {
+    // @ts-ignore
+    navigation.navigate('AllPlaylists', { 
+      title: featuredPlaylistMessage,
+      playlists: featuredPlaylists
+    });
+  };
 
   // Pull to refresh handler
   const onRefresh = () => {
@@ -376,7 +403,7 @@ const HomeScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               New Releases
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={navigateToAllNewReleases}>
               <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
                 See All
               </Text>
@@ -407,7 +434,7 @@ const HomeScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Your Top Tracks
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={navigateToAllTopTracks}>
               <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
                 See All
               </Text>
@@ -437,7 +464,7 @@ const HomeScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               {featuredPlaylistMessage}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={navigateToAllFeaturedPlaylists}>
               <Text style={[styles.seeAll, { color: theme.colors.primary }]}>
                 Browse All
               </Text>

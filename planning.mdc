@@ -1,0 +1,38 @@
+# Music App Development TODO List Generator
+
+## Rules for Cursor
+
+- When the user provides a command, generate a structured TODO list based on the request and edit this .mdc file.
+- Each TODO item should be specific, actionable, and categorized based on the development phase.
+- Use markdown checkboxes (`- [ ]`) for easy tracking.
+- Categories should include:
+  - **UI/UX Design**
+  - **Frontend Development**
+  - **Backend Development**
+  - **API Integrations**
+  - **Testing & Debugging**
+  - **Deployment & Optimization**
+  - **Marketing & Monetization**
+- When a task is completed, move it under the `## Done` section.
+
+## TODO
+  ### Authentication Bypass
+  [ ] AppNavigator.tsx dosyasında isAuthenticated değişkenini true olarak ayarla
+  [ ] Auth ekranlarını es geçip direkt Main navigasyonuna yönlendirme sağla
+  [ ] Auth navigasyon mantığını koruyarak gelecekte yeniden kullanıma hazır tut
+  ### Main Navigation Geliştirmeleri
+  [ ] BottomTabNavigator'daki placeholder ekranları gerçek işlevselliklerle doldurmaya başla
+  [ ] Tab iconlarını geliştir ve modern bir görünüm ekle
+  [ ] TabBar stilini uygulama temasıyla uyumlu hale getir
+  ### Kullanıcı Deneyimi
+  [ ] Kullanıcı oturum açma durumunu yönetmek için basit bir durum mekanizması kur (gerçek auth olmadan)
+  [ ] Varsayılan kullanıcı profili oluştur
+  [ ] Main flow'da Profil ekranı için placeholder içeriği hazırla
+
+## Done
+  ### "See All" Ekranları
+  [X] HomeScreen, CommunityScreen ve ProfileScreen'deki "See All" butonlarına işlevsellik ekle
+  [X] Yeniden kullanılabilir AllItemsScreen bileşeni oluştur
+  [X] Müzik öğeleri için renderleyiciler oluştur (albüm, şarkı, çalma listesi, sanatçı)
+  [X] Topluluk öğeleri için renderleyiciler oluştur (dinleme odaları, müzik yarışmaları)
+  [X] Tüm "See All" ekranlarını AppNavigator'a ekle 

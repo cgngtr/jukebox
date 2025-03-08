@@ -682,6 +682,26 @@ const ProfileScreen: React.FC = () => {
       </View>
     );
   };
+  
+  // Navigate to see all top artists
+  const navigateToAllTopArtists = () => {
+    // @ts-ignore
+    navigation.navigate('AllTopArtists', { 
+      title: 'Your Top Artists',
+      artists: topArtists
+    });
+  };
+  
+  // Navigate to see all playlists
+  const navigateToAllPlaylists = () => {
+    // @ts-ignore
+    navigation.navigate('AllPlaylists', { 
+      title: 'Your Playlists',
+      playlists: recentPlaylists,
+      selectedTab: selectedPlaylistTab,
+      userId: user?.id || ''
+    });
+  };
 
   // Show loading indicator while fetching data
   if (isLoading) {
@@ -876,7 +896,7 @@ const ProfileScreen: React.FC = () => {
                 <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
                   Top Artists
                 </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={navigateToAllTopArtists}>
                   <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
                     See All
                   </Text>
@@ -906,7 +926,7 @@ const ProfileScreen: React.FC = () => {
                 <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
                   Your Playlists
                 </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={navigateToAllPlaylists}>
                   <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
                     See All
                   </Text>

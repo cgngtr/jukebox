@@ -16,6 +16,14 @@ import {
 import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
 
+// "See All" screens
+import AllNewReleasesScreen from '../screens/music/AllNewReleasesScreen';
+import AllTracksScreen from '../screens/music/AllTracksScreen';
+import AllPlaylistsScreen from '../screens/music/AllPlaylistsScreen';
+import AllTopArtistsScreen from '../screens/music/AllTopArtistsScreen';
+import AllListeningRoomsScreen from '../screens/community/AllListeningRoomsScreen';
+import AllChallengesScreen from '../screens/community/AllChallengesScreen';
+
 // Stack navigator types
 export type AppStackParamList = {
   Auth: undefined;
@@ -28,6 +36,13 @@ export type AppStackParamList = {
   PlaylistDetail: { id: string };
   ListeningRoomScreen: { id: string };
   SearchResults: { query: string; category: string };
+  // "See All" screen types
+  AllNewReleases: { albums: any[]; title: string };
+  AllTracks: { tracks: any[]; title: string };
+  AllPlaylists: { playlists: any[]; title: string; selectedTab?: string; userId?: string };
+  AllTopArtists: { artists: any[]; title: string };
+  AllListeningRooms: { rooms: any[]; title: string };
+  AllChallenges: { challenges: any[]; title: string };
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -136,6 +151,56 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen 
           name="SearchResults" 
           component={SearchResultsScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        
+        {/* "See All" Screens */}
+        <Stack.Screen 
+          name="AllNewReleases" 
+          component={AllNewReleasesScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="AllTracks" 
+          component={AllTracksScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="AllPlaylists" 
+          component={AllPlaylistsScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="AllTopArtists" 
+          component={AllTopArtistsScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="AllListeningRooms" 
+          component={AllListeningRoomsScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="AllChallenges" 
+          component={AllChallengesScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',

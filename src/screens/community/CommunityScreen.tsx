@@ -94,6 +94,24 @@ const CommunityScreen: React.FC = () => {
     // @ts-ignore
     navigation.navigate('ListeningRoomScreen', { id: roomId });
   };
+  
+  // Navigate to see all listening rooms
+  const navigateToAllListeningRooms = () => {
+    // @ts-ignore
+    navigation.navigate('AllListeningRooms', { 
+      title: 'Live Listening Rooms',
+      rooms: listeningRooms
+    });
+  };
+  
+  // Navigate to see all music challenges
+  const navigateToAllChallenges = () => {
+    // @ts-ignore
+    navigation.navigate('AllChallenges', { 
+      title: 'Music Challenges',
+      challenges: musicChallenges
+    });
+  };
 
   // Render a listening room card
   const renderListeningRoom = ({ item }: { item: typeof listeningRooms[0] }) => (
@@ -275,7 +293,10 @@ const CommunityScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Live Listening Rooms
             </Text>
-            <TouchableOpacity style={styles.seeAllButton}>
+            <TouchableOpacity 
+              style={styles.seeAllButton}
+              onPress={navigateToAllListeningRooms}
+            >
               <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
                 See All
               </Text>
@@ -299,7 +320,10 @@ const CommunityScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Music Challenges
             </Text>
-            <TouchableOpacity style={styles.seeAllButton}>
+            <TouchableOpacity 
+              style={styles.seeAllButton}
+              onPress={navigateToAllChallenges}
+            >
               <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
                 See All
               </Text>
