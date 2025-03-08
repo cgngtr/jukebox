@@ -11,6 +11,7 @@ import ArtistDetailScreen from '../screens/music/ArtistDetailScreen';
 import AlbumDetailScreen from '../screens/music/AlbumDetailScreen';
 import TrackDetailScreen from '../screens/music/TrackDetailScreen';
 import { PlaylistDetailScreen } from '../screens/music/DetailScreens';
+import ArtistAlbumsScreen from '../screens/music/ArtistAlbumsScreen';
 import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
 
@@ -32,6 +33,7 @@ export type AppStackParamList = {
   AlbumDetail: { id: string };
   TrackDetail: { id: string };
   PlaylistDetail: { id: string };
+  ArtistAlbums: { artistId: string; artistName: string };
   ListeningRoomScreen: { id: string };
   SearchResults: { query: string; category: string };
   // "See All" screen types
@@ -152,6 +154,14 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen 
           name="PlaylistDetail" 
           component={PlaylistDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ArtistAlbums" 
+          component={ArtistAlbumsScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',
