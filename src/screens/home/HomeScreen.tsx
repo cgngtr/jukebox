@@ -443,9 +443,12 @@ const HomeScreen: React.FC = () => {
           
           {topTracks.length > 0 ? (
             <Card style={styles.tracksCard}>
-              {topTracks.slice(0, 5).map((track) => (
+              {topTracks.slice(0, 5).map((track, index) => (
                 <React.Fragment key={track.id}>
                   {renderTrackItem({ item: track })}
+                  {index < topTracks.slice(0, 5).length - 1 && (
+                    <View style={[styles.trackDivider, { backgroundColor: theme.colors.text.primary }]} />
+                  )}
                 </React.Fragment>
               ))}
             </Card>
@@ -624,6 +627,10 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     fontVariant: ['tabular-nums'],
     fontWeight: '500',
+  },
+  trackDivider: {
+    height: 1,
+    opacity: 0.08,
   },
   featuredList: {
     paddingBottom: spacing.sm,

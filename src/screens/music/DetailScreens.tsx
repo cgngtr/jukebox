@@ -144,34 +144,38 @@ export const ArtistDetailScreen = () => {
           </Text>
           
           {topTracks.slice(0, 5).map((track, index) => (
-            <TouchableOpacity 
-              key={track.id}
-              style={styles.trackItem}
-              onPress={() => {
-                // @ts-ignore
-                navigation.navigate('TrackDetail', { id: track.id });
-              }}
-            >
-              <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
-                {index + 1}
-              </Text>
-              <Image 
-                source={{ uri: track.album.images[0]?.url || 'https://via.placeholder.com/60' }}
-                style={styles.trackImage}
-              />
-              <View style={styles.trackInfo}>
-                <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
-                  {track.name}
+            <React.Fragment key={track.id}>
+              <TouchableOpacity 
+                style={styles.trackItem}
+                onPress={() => {
+                  // @ts-ignore
+                  navigation.navigate('TrackDetail', { id: track.id });
+                }}
+              >
+                <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
+                  {index + 1}
                 </Text>
-                <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
-                  {track.explicit && <Text>🅴 </Text>}
-                  {track.artists.map((a: any) => a.name).join(', ')}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
-                <Ionicons name="play" size={22} color={theme.colors.primary} />
+                <Image 
+                  source={{ uri: track.album.images[0]?.url || 'https://via.placeholder.com/60' }}
+                  style={styles.trackImage}
+                />
+                <View style={styles.trackInfo}>
+                  <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
+                    {track.name}
+                  </Text>
+                  <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
+                    {track.explicit && <Text>🅴 </Text>}
+                    {track.artists.map((a: any) => a.name).join(', ')}
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
+                  <Ionicons name="play" size={22} color={theme.colors.primary} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
+              {index < topTracks.slice(0, 5).length - 1 && (
+                <View style={[styles.trackDivider, { backgroundColor: theme.colors.text.primary }]} />
+              )}
+            </React.Fragment>
           ))}
         </View>
       </ScrollView>
@@ -295,30 +299,34 @@ export const AlbumDetailScreen = () => {
         {/* Tracks Section */}
         <View style={styles.section}>
           {album.tracks.items.map((track: any, index: number) => (
-            <TouchableOpacity 
-              key={track.id}
-              style={styles.trackItem}
-              onPress={() => {
-                // @ts-ignore
-                navigation.navigate('TrackDetail', { id: track.id });
-              }}
-            >
-              <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
-                {index + 1}
-              </Text>
-              <View style={styles.trackInfo}>
-                <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
-                  {track.name}
+            <React.Fragment key={track.id}>
+              <TouchableOpacity 
+                style={styles.trackItem}
+                onPress={() => {
+                  // @ts-ignore
+                  navigation.navigate('TrackDetail', { id: track.id });
+                }}
+              >
+                <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
+                  {index + 1}
                 </Text>
-                <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
-                  {track.explicit && <Text>🅴 </Text>}
-                  {track.artists.map((a: any) => a.name).join(', ')}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
-                <Ionicons name="play" size={22} color={theme.colors.primary} />
+                <View style={styles.trackInfo}>
+                  <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
+                    {track.name}
+                  </Text>
+                  <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
+                    {track.explicit && <Text>🅴 </Text>}
+                    {track.artists.map((a: any) => a.name).join(', ')}
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
+                  <Ionicons name="play" size={22} color={theme.colors.primary} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
+              {index < album.tracks.items.length - 1 && (
+                <View style={[styles.trackDivider, { backgroundColor: theme.colors.text.primary }]} />
+              )}
+            </React.Fragment>
           ))}
         </View>
       </ScrollView>
@@ -569,34 +577,38 @@ export const PlaylistDetailScreen = () => {
         {/* Tracks Section */}
         <View style={styles.section}>
           {playlist.tracks.items.map((item: any, index: number) => (
-            <TouchableOpacity 
-              key={item.track.id}
-              style={styles.trackItem}
-              onPress={() => {
-                // @ts-ignore
-                navigation.navigate('TrackDetail', { id: item.track.id });
-              }}
-            >
-              <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
-                {index + 1}
-              </Text>
-              <Image 
-                source={{ uri: item.track.album.images[0]?.url || 'https://via.placeholder.com/60' }}
-                style={styles.trackImage}
-              />
-              <View style={styles.trackInfo}>
-                <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
-                  {item.track.name}
+            <React.Fragment key={item.track.id}>
+              <TouchableOpacity 
+                style={styles.trackItem}
+                onPress={() => {
+                  // @ts-ignore
+                  navigation.navigate('TrackDetail', { id: item.track.id });
+                }}
+              >
+                <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
+                  {index + 1}
                 </Text>
-                <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
-                  {item.track.explicit && <Text>🅴 </Text>}
-                  {item.track.artists.map((a: any) => a.name).join(', ')}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
-                <Ionicons name="play" size={22} color={theme.colors.primary} />
+                <Image 
+                  source={{ uri: item.track.album.images[0]?.url || 'https://via.placeholder.com/60' }}
+                  style={styles.trackImage}
+                />
+                <View style={styles.trackInfo}>
+                  <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
+                    {item.track.name}
+                  </Text>
+                  <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
+                    {item.track.explicit && <Text>🅴 </Text>}
+                    {item.track.artists.map((a: any) => a.name).join(', ')}
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
+                  <Ionicons name="play" size={22} color={theme.colors.primary} />
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
+              {index < playlist.tracks.items.length - 1 && (
+                <View style={[styles.trackDivider, { backgroundColor: theme.colors.text.primary }]} />
+              )}
+            </React.Fragment>
           ))}
         </View>
       </ScrollView>
@@ -828,5 +840,10 @@ const styles = StyleSheet.create({
   playlistInfo: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  trackDivider: {
+    height: 1,
+    marginHorizontal: spacing.lg,
+    opacity: 0.08,
   },
 }); 

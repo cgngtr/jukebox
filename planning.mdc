@@ -53,6 +53,7 @@ alwaysApply: false
   ### Tasarım İyileştirmeleri
   [X] LoginScreen'deki padding sorunlarını çöz - Icon içeren containerların ekranın soluna yakınlık problemini düzelt
   [X] Spotify ile giriş yap butonunun kenar boşluklarını artır - Ekran kenarlarından uzaklaştır
+  [X] DetailScreens.tsx'teki şarkı listeleri arasına modern, ince dividerlar ekle - Sanatçı, albüm ve çalma listesi detay sayfalarında görsel iyileştirme sağla
   
   ### Veri İşleme ve API Düzeltmeleri
   [X] ProfileScreen'deki following ve playlist sayılarının doğru gösterilmesini sağla - Spotify API aracılığıyla takip edilen sanatçıları çekerek göster
