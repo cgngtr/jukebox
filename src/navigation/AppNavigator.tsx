@@ -50,15 +50,34 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 // App navigation structure
 const AppNavigator: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
-  const { isAuthenticated, isLoading } = useAuth();
-  const [initialRoute, setInitialRoute] = useState<keyof AppStackParamList>('Auth');
+  const { isAuthenticated: authState, isLoading, getToken } = useAuth();
   
-  // Auth durumu değiştiğinde initial route'u belirle
+  // İlk durumda Auth ekranını göster, token kontrolünden sonra değişecek
+  const [initialRoute, setInitialRoute] = useState<keyof AppStackParamList>('Auth');
+  const [hasToken, setHasToken] = useState<boolean>(false);
+  
+  // Token varlığını kontrol et
   useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const token = await getToken();
+        const tokenExists = !!token;
+        setHasToken(tokenExists);
+        
+        // Token yoksa Auth ekranına, varsa Main ekranına yönlendir
+        setInitialRoute(tokenExists ? 'Main' : 'Auth');
+        console.log(`Token ${tokenExists ? 'bulundu' : 'bulunamadı'}, yönlendiriliyor: ${tokenExists ? 'Main' : 'Auth'}`);
+      } catch (error) {
+        console.error('Token kontrolü sırasında hata:', error);
+        setHasToken(false);
+        setInitialRoute('Auth');
+      }
+    };
+    
     if (!isLoading) {
-      setInitialRoute(isAuthenticated ? 'Main' : 'Auth');
+      checkToken();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isLoading, getToken]);
   
   // Using DefaultTheme as base and overriding colors
   const navigationTheme = {

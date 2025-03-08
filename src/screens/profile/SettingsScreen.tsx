@@ -5,17 +5,58 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
-  Switch 
+  Switch,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../styles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../context/AuthContext';
+import { CommonActions } from '@react-navigation/native';
 
 const SettingsScreen: React.FC = () => {
   const { theme, toggleTheme, isDarkMode } = useTheme();
   const navigation = useNavigation();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: async () => {
+              // Perform logout
+              await logout();
+              
+              // Navigate to Auth screen
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }],
+                })
+              );
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error logging out:', error);
+      Alert.alert(
+        'Error',
+        'An error occurred while signing out. Please try again.'
+      );
+    }
+  };
 
   // Render a settings item with icon
   const SettingsItem = ({ 
@@ -167,6 +208,7 @@ const SettingsScreen: React.FC = () => {
         
         <TouchableOpacity 
           style={[styles.logoutButton, { backgroundColor: theme.colors.error + '20' }]}
+          onPress={handleLogout}
         >
           <Text style={[styles.logoutText, { color: theme.colors.error }]}>
             Sign Out

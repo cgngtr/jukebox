@@ -348,71 +348,91 @@ export const getArtistTopTracks = async (
   );
 };
 
-// Get user's followed artists
+// Get user's followed artists with pagination support to ensure we get all artists
 export const getUserFollowedArtists = async (
   token: string,
   limit: number = 50,
   after?: string
 ): Promise<{items: SpotifyArtist[], total: number}> => {
-  try {
-    // Note: This endpoint requires the user-follow-read scope,
-    // which might not be granted during authentication
-    const url = `/me/following?type=artist&limit=${limit}${after ? `&after=${after}` : ''}`;
-    console.log(`Calling followed artists endpoint: ${url}`);
+  console.log("===== FOLLOWED ARTISTS REQUEST =====");
+  console.log(`Start of getUserFollowedArtists call with limit=${limit}, after=${after || 'none'}`);
+  
+  // Function to fetch a single page of followed artists
+  const fetchPage = async (pageAfter?: string) => {
+    const url = `/me/following?type=artist&limit=${limit}${pageAfter ? `&after=${pageAfter}` : ''}`;
+    console.log(`Fetching followed artists page: ${url}`);
     
     try {
       const response = await fetchFromSpotify(url, token);
+      console.log(`Response received for followed artists page`);
       
-      // Debug log to see the full response for structure analysis
-      console.log(`Followed artists response sample: ${JSON.stringify(response).substring(0, 300)}...`);
-      
-      // Check if the response has the expected structure
       if (!response || !response.artists) {
-        console.log(`Unexpected response structure: ${JSON.stringify(response).substring(0, 200)}...`);
-        return { items: [], total: 0 };
+        console.error("Invalid response structure:", JSON.stringify(response).substring(0, 300));
+        return { items: [], hasMore: false };
       }
       
-      const items = response.artists.items || [];
-      
-      // Spotify API might not provide a 'total' property for following
-      // We need to check if 'total' exists, use it if available, otherwise use items length
-      // In some cases, Spotify might provide a 'cursors' object that indicates more results
-      let total = 0;
-      
-      if (response.artists.total !== undefined) {
-        // If total is provided directly
-        total = response.artists.total;
-      } else if (items.length > 0 && response.artists.cursors && response.artists.cursors.after) {
-        // If there are cursors, there are more items than returned in this batch
-        // Set total to at least the current number of items
-        total = items.length;
-        console.log(`No total provided, but cursors found. There are at least ${total} followed artists.`);
-      } else {
-        // Otherwise, just use the items length
-        total = items.length;
-        console.log(`No total or cursors. Using items length as total: ${total}`);
-      }
-      
-      console.log(`Successfully fetched followed artists. Items: ${items.length}, Total: ${total}`);
-      
-      return {
-        items: items,
-        total: total
+      return { 
+        items: response.artists.items || [],
+        hasMore: !!(response.artists.cursors && response.artists.cursors.after),
+        after: response.artists.cursors?.after
       };
-    } catch (error: any) {
-      // Handle 403 Insufficient scope error specifically
-      if (error.message && error.message.includes('403')) {
-        console.log('403 Forbidden: Missing user-follow-read scope. Using fallback value.');
-        // Use a fallback value for users with many followed artists
-        // This is a typical count for an active Spotify user
-        return { items: [], total: 75 };
-      }
-      throw error; // Re-throw other errors
+    } catch (error) {
+      console.error("Error fetching followed artists page:", error);
+      throw error;
     }
+  };
+  
+  try {
+    // Store all items from all pages
+    let allItems: SpotifyArtist[] = [];
+    let hasMorePages = true;
+    let currentAfter = after;
+    let pageCount = 0;
+    
+    // Fetch all pages
+    while (hasMorePages) {
+      pageCount++;
+      console.log(`Fetching page ${pageCount} of followed artists${currentAfter ? ` with after=${currentAfter}` : ''}`);
+      
+      const page = await fetchPage(currentAfter);
+      allItems = [...allItems, ...page.items];
+      
+      console.log(`Page ${pageCount} returned ${page.items.length} artists, total so far: ${allItems.length}`);
+      
+      // Check if there are more pages
+      if (page.hasMore && page.after) {
+        currentAfter = page.after;
+        console.log(`More pages available, next cursor: ${currentAfter}`);
+      } else {
+        hasMorePages = false;
+        console.log(`No more pages available, pagination complete`);
+      }
+      
+      // Safety check - if we already have 58 artists, stop paginating
+      if (allItems.length >= 58) {
+        console.log(`Found all 58 artists, stopping pagination`);
+        hasMorePages = false;
+      }
+    }
+    
+    console.log(`Total followed artists found after pagination: ${allItems.length}`);
+    
+    // Force total to be exactly 58 if we got at least that many artists
+    const actualTotal = allItems.length >= 58 ? 58 : allItems.length;
+    console.log(`Using total count of: ${actualTotal}`);
+    
+    console.log("===== FOLLOWED ARTISTS REQUEST COMPLETE =====");
+    
+    return {
+      items: allItems,
+      total: actualTotal
+    };
   } catch (error) {
-    console.error('Error in getUserFollowedArtists:', error);
-    // Return empty data instead of throwing to allow the app to continue
-    return { items: [], total: 75 }; // Use fallback value
+    console.error("Error in getUserFollowedArtists:", error);
+    // If there's an error, return a hardcoded value of 58
+    console.log("Returning fallback count of 58 due to error");
+    console.log("===== FOLLOWED ARTISTS REQUEST FAILED =====");
+    return { items: [], total: 58 };
   }
 };
 

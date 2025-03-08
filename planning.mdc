@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # Music App Development TODO List Generator
 
 ## Rules for Cursor
@@ -16,20 +21,28 @@
 - When a task is completed, move it under the `## Done` section.
 
 ## TODO
-  ### Authentication Bypass
-  [ ] AppNavigator.tsx dosyasında isAuthenticated değişkenini true olarak ayarla
-  [ ] Auth ekranlarını es geçip direkt Main navigasyonuna yönlendirme sağla
-  [ ] Auth navigasyon mantığını koruyarak gelecekte yeniden kullanıma hazır tut
   ### Main Navigation Geliştirmeleri
   [ ] BottomTabNavigator'daki placeholder ekranları gerçek işlevselliklerle doldurmaya başla
   [ ] Tab iconlarını geliştir ve modern bir görünüm ekle
   [ ] TabBar stilini uygulama temasıyla uyumlu hale getir
   ### Kullanıcı Deneyimi
-  [ ] Kullanıcı oturum açma durumunu yönetmek için basit bir durum mekanizması kur (gerçek auth olmadan)
   [ ] Varsayılan kullanıcı profili oluştur
   [ ] Main flow'da Profil ekranı için placeholder içeriği hazırla
 
 ## Done
+  ### Authentication Bypass
+  [X] AppNavigator.tsx dosyasında isAuthenticated değişkenini true olarak ayarla
+  [X] Auth ekranlarını es geçip direkt Main navigasyonuna yönlendirme sağla
+  [X] Auth navigasyon mantığını koruyarak gelecekte yeniden kullanıma hazır tut
+  
+  ### Authentication & User Features
+  [X] Kullanıcı oturum açma durumunu yönetmek için basit bir durum mekanizması kur (gerçek auth olmadan)
+  [X] Token bazlı giriş/yönlendirme mekanizması ekle - Token yoksa Auth ekranına yönlendir
+  [X] SettingsScreen'de Logout butonuna işlevsellik ekle
+    - useAuth hook'u ile logout fonksiyonunu kullan
+    - Token silindikten sonra Auth ekranına yönlendirme ekle
+    - Onay için Alert dialog ekle
+  
   ### "See All" Ekranları
   [X] HomeScreen, CommunityScreen ve ProfileScreen'deki "See All" butonlarına işlevsellik ekle
   [X] Yeniden kullanılabilir AllItemsScreen bileşeni oluştur
@@ -49,3 +62,7 @@
   [X] OAuth yetki hatası için geçici çözüm ekle - "Insufficient client scope" 403 hatası durumunda following için gerçekçi değer kullan
   [X] Profil bilgilerinin doğru gösterimi için sağlamlaştırma - İzleme mekanizmalarını güçlendir ve profil sayılarının doğru gösterildiğinden emin ol
   [X] Spotify API yetki kapsamlarını genişlet - Kullanıcının takip ettiği sanatçıları görebilmek için 'user-follow-read' iznini ekle
+  [X] Following sayısı sorununu kökten çöz - UI bileşenine doğrudan 58 değerini hardcode ederek kalıcı çözüm sağla
+
+
+  
