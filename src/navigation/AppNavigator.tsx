@@ -7,12 +7,10 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import SpotifyTestScreen from '../screens/SpotifyTestScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
-import { 
-  ArtistDetailScreen, 
-  AlbumDetailScreen, 
-  TrackDetailScreen, 
-  PlaylistDetailScreen 
-} from '../screens/music/DetailScreens';
+import ArtistDetailScreen from '../screens/music/ArtistDetailScreen';
+import AlbumDetailScreen from '../screens/music/AlbumDetailScreen';
+import TrackDetailScreen from '../screens/music/TrackDetailScreen';
+import { PlaylistDetailScreen } from '../screens/music/DetailScreens';
 import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
 
