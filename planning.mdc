@@ -36,3 +36,7 @@
   [X] Müzik öğeleri için renderleyiciler oluştur (albüm, şarkı, çalma listesi, sanatçı)
   [X] Topluluk öğeleri için renderleyiciler oluştur (dinleme odaları, müzik yarışmaları)
   [X] Tüm "See All" ekranlarını AppNavigator'a ekle 
+
+  ### Tasarım İyileştirmeleri
+  [X] LoginScreen'deki padding sorunlarını çöz - Icon içeren containerların ekranın soluna yakınlık problemini düzelt
+  [X] Spotify ile giriş yap butonunun kenar boşluklarını artır - Ekran kenarlarından uzaklaştır 

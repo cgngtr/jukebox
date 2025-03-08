@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     justifyContent: 'space-between',
     paddingVertical: spacing.xl * 2,
   },
@@ -240,19 +240,22 @@ const styles = StyleSheet.create({
   },
   featuresContainer: {
     marginVertical: spacing.xxl,
+    paddingHorizontal: spacing.md,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xl,
+    paddingLeft: spacing.md,
   },
   featureIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.base,
+    marginRight: spacing.lg,
+    marginLeft: spacing.sm,
   },
   featureTextContainer: {
     flex: 1,
@@ -267,14 +270,17 @@ const styles = StyleSheet.create({
   },
   loginContainer: {
     marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
   },
   loginButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.base,
+    paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.pill,
     marginBottom: spacing.lg,
+    marginHorizontal: spacing.xl,
   },
   buttonIcon: {
     marginRight: spacing.sm,
