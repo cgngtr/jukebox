@@ -8,6 +8,8 @@ import SearchScreen from '../screens/search/SearchScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import ActivityScreen from '../screens/activity/ActivityScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import MiniPlayer from '../components/music/MiniPlayer';
+import { usePlayer } from '../context/PlayerContext';
 import { 
   MaterialIcons, 
   Ionicons, 
@@ -26,157 +28,200 @@ export type BottomTabParamList = {
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-// Icon size configuration
-const ICON_SIZE = 28;
+// Icon size configuration - increased for better visibility
+const ICON_SIZE = 24;
+const FOCUS_SCALE = 1.1; // Subtle scale effect for focused icons
 
 // Bottom tab navigation
 const BottomTabNavigator: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
+  const { playerState } = usePlayer();
   
   // Platform-specific styling
   const isIOS = Platform.OS === 'ios';
   
+  // Determine if the mini player should be shown
+  const showMiniPlayer = playerState.currentTrack !== null;
+  
+  // Adjust tabBar height when mini player is visible
+  const tabBarHeight = showMiniPlayer ? layout.tabBarHeight : layout.tabBarHeight + 10;
+  
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.background,
-          borderTopColor: isDarkMode ? 'transparent' : theme.colors.divider,
-          borderTopWidth: isDarkMode ? 0 : StyleSheet.hairlineWidth,
-          height: layout.tabBarHeight,
-          paddingBottom: isIOS ? spacing.xs : spacing.xxs,
-          paddingTop: spacing.xxs,
+    <View style={{ flex: 1 }}>
+      {/* Mini Player */}
+      {showMiniPlayer && (
+        <View style={{
           position: 'absolute',
+          bottom: layout.tabBarHeight,
           left: 0,
           right: 0,
-          bottom: 0,
-          ...Platform.select({
-            ios: {
-              shadowColor: isDarkMode ? 'transparent' : 'rgba(0, 0, 0, 0.1)',
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-            },
-            android: {
-              elevation: isDarkMode ? 0 : 4,
-            },
-          }),
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.text.inactive,
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-          marginTop: isIOS ? 2 : 0,
-        },
-        tabBarItemStyle: {
-          paddingVertical: spacing.xxs,
-        },
-        tabBarShowLabel: true,
-        tabBarHideOnKeyboard: true,
-      }}
-    >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[
-              styles.iconContainer,
-              focused && { backgroundColor: `${theme.colors.primary}15` }
-            ]}>
-              <Ionicons 
-                name={focused ? "home" : "home-outline"} 
-                size={ICON_SIZE} 
-                color={color} 
-              />
-            </View>
-          ),
-        }}
-      />
+          zIndex: 1000
+        }}>
+          <MiniPlayer />
+        </View>
+      )}
       
-      <Tab.Screen 
-        name="Search" 
-        component={SearchScreen} 
-        options={{
-          tabBarLabel: 'Search',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[
-              styles.iconContainer,
-              focused && { backgroundColor: `${theme.colors.primary}15` }
-            ]}>
-              <Ionicons 
-                name={focused ? "search" : "search-outline"} 
-                size={ICON_SIZE} 
-                color={color} 
-              />
-            </View>
-          ),
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: theme.colors.background,
+            borderTopColor: isDarkMode ? 'transparent' : theme.colors.divider,
+            borderTopWidth: isDarkMode ? 0 : StyleSheet.hairlineWidth,
+            height: tabBarHeight,
+            paddingBottom: isIOS ? spacing.xs : spacing.xxs,
+            paddingTop: spacing.xxs,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            ...Platform.select({
+              ios: {
+                shadowColor: isDarkMode ? 'transparent' : theme.colors.divider,
+                shadowOffset: { width: 0, height: -3 },
+                shadowOpacity: 0.12,
+                shadowRadius: 5,
+              },
+              android: {
+                elevation: isDarkMode ? 0 : 8,
+              },
+            }),
+          },
+          tabBarActiveTintColor: theme.colors.primary,
+          tabBarInactiveTintColor: theme.colors.text.secondary,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            marginTop: isIOS ? 2 : 0,
+            fontFamily: 'System',
+          },
+          tabBarItemStyle: {
+            paddingVertical: spacing.xxs,
+          },
+          tabBarShowLabel: true,
+          tabBarHideOnKeyboard: true,
         }}
-      />
-      
-      <Tab.Screen 
-        name="Community" 
-        component={CommunityScreen} 
-        options={{
-          tabBarLabel: 'Community',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[
-              styles.iconContainer,
-              focused && { backgroundColor: `${theme.colors.primary}15` }
-            ]}>
-              <MaterialIcons 
-                name={focused ? "people" : "people-outline"} 
-                size={ICON_SIZE} 
-                color={color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      
-      <Tab.Screen 
-        name="Activity" 
-        component={ActivityScreen} 
-        options={{
-          tabBarLabel: 'Activity',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[
-              styles.iconContainer,
-              focused && { backgroundColor: `${theme.colors.primary}15` }
-            ]}>
-              <MaterialIcons 
-                name={focused ? "notifications" : "notifications-none"} 
-                size={ICON_SIZE} 
-                color={color} 
-              />
-            </View>
-          ),
-        }}
-      />
-      
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[
-              styles.iconContainer,
-              focused && { backgroundColor: `${theme.colors.primary}15` }
-            ]}>
-              <MaterialCommunityIcons 
-                name={focused ? "account-music" : "account-music-outline"} 
-                size={ICON_SIZE} 
-                color={color} 
-              />
-            </View>
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.iconContainer,
+                focused && { 
+                  backgroundColor: `${theme.colors.primary}20`,
+                  transform: [{ scale: FOCUS_SCALE }]
+                }
+              ]}>
+                <Ionicons 
+                  name={focused ? "home" : "home-outline"} 
+                  size={ICON_SIZE} 
+                  color={color} 
+                />
+              </View>
+            ),
+          }}
+        />
+        
+        <Tab.Screen 
+          name="Search" 
+          component={SearchScreen} 
+          options={{
+            tabBarLabel: 'Search',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.iconContainer,
+                focused && { 
+                  backgroundColor: `${theme.colors.primary}20`,
+                  transform: [{ scale: FOCUS_SCALE }]
+                }
+              ]}>
+                <Ionicons 
+                  name={focused ? "search" : "search-outline"} 
+                  size={ICON_SIZE} 
+                  color={color} 
+                />
+              </View>
+            ),
+          }}
+        />
+        
+        <Tab.Screen 
+          name="Community" 
+          component={CommunityScreen} 
+          options={{
+            tabBarLabel: 'Community',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.iconContainer,
+                focused && { 
+                  backgroundColor: `${theme.colors.primary}20`,
+                  transform: [{ scale: FOCUS_SCALE }]
+                }
+              ]}>
+                <MaterialCommunityIcons 
+                  name={focused ? "account-group" : "account-group-outline"} 
+                  size={ICON_SIZE} 
+                  color={color} 
+                />
+              </View>
+            ),
+          }}
+        />
+        
+        <Tab.Screen 
+          name="Activity" 
+          component={ActivityScreen} 
+          options={{
+            tabBarLabel: 'Activity',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.iconContainer,
+                focused && { 
+                  backgroundColor: `${theme.colors.primary}20`,
+                  transform: [{ scale: FOCUS_SCALE }]
+                }
+              ]}>
+                <Ionicons 
+                  name={focused ? "pulse" : "pulse-outline"} 
+                  size={ICON_SIZE} 
+                  color={color} 
+                />
+                {/* Add a notification indicator when there are new activities */}
+                {focused ? null : (
+                  <View style={styles.notificationDot} />
+                )}
+              </View>
+            ),
+          }}
+        />
+        
+        <Tab.Screen 
+          name="Profile" 
+          component={ProfileScreen} 
+          options={{
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[
+                styles.iconContainer,
+                focused && { 
+                  backgroundColor: `${theme.colors.primary}20`,
+                  transform: [{ scale: FOCUS_SCALE }]
+                }
+              ]}>
+                <MaterialCommunityIcons 
+                  name={focused ? "account-music" : "account-music-outline"} 
+                  size={ICON_SIZE} 
+                  color={color} 
+                />
+              </View>
+            ),
+          }}
+        />
+      </Tab.Navigator>
+    </View>
   );
 };
 
@@ -187,7 +232,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
+    position: 'relative',
   },
+  notificationDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30', // Red notification dot
+    borderWidth: 1,
+    borderColor: 'white',
+  }
 });
 
 export default BottomTabNavigator;

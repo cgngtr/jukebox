@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { spacing, borderRadius } from '../../styles';
 import { music } from '../../api';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { usePlayer } from '../../context/PlayerContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -45,6 +46,8 @@ const ArtistDetailScreen = () => {
   
   // @ts-ignore
   const { id } = route.params;
+  
+  const player = usePlayer();
   
   useEffect(() => {
     loadArtistData();
@@ -242,6 +245,16 @@ const ArtistDetailScreen = () => {
     });
   };
   
+  // Parçayı çalma işlevi
+  const handlePlayTrack = async (track: any, index: number) => {
+    try {
+      // Play the selected track with the artist's top tracks
+      await player.play(topTracks[index], topTracks);
+    } catch (error) {
+      console.error('Track playback error:', error);
+    }
+  };
+  
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -426,7 +439,7 @@ const ArtistDetailScreen = () => {
             </Text>
           </View>
           
-          {topTracks.slice(0, tracksToShow).map((track, index) => (
+          {topTracks.slice(0, tracksToShow).map((track: any, index: number) => (
             <React.Fragment key={track.id}>
               <TouchableOpacity 
                 style={styles.trackItem}
@@ -451,7 +464,10 @@ const ArtistDetailScreen = () => {
                     {track.artists.map((a: any) => a.name).join(', ')}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.playButton}>
+                <TouchableOpacity 
+                  style={styles.playButton}
+                  onPress={() => handlePlayTrack(track, index)}
+                >
                   <Ionicons name="play" size={22} color={theme.colors.primary} />
                 </TouchableOpacity>
               </TouchableOpacity>

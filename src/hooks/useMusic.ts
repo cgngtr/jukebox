@@ -11,13 +11,11 @@ import {
 
 interface UseMusic {
   // Veri fetching durumları
-  isLoadingFeatured: boolean;
   isLoadingNewReleases: boolean;
   isLoadingSearch: boolean;
   isLoadingUserStats: boolean;
   
   // Veri
-  featuredPlaylists: SpotifyPlaylist[];
   newReleases: SpotifyAlbum[];
   searchResults: {
     tracks: SpotifyTrack[];
@@ -32,7 +30,6 @@ interface UseMusic {
   error: Error | null;
   
   // İşlevler
-  fetchFeaturedPlaylists: () => Promise<void>;
   fetchNewReleases: () => Promise<void>;
   search: (query: string, types?: string[]) => Promise<void>;
   fetchUserTopItems: () => Promise<void>;
@@ -47,13 +44,11 @@ export const useMusic = (): UseMusic => {
   const { play } = usePlayer();
   
   // Veri yükleme durumları
-  const [isLoadingFeatured, setIsLoadingFeatured] = useState<boolean>(false);
   const [isLoadingNewReleases, setIsLoadingNewReleases] = useState<boolean>(false);
   const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(false);
   const [isLoadingUserStats, setIsLoadingUserStats] = useState<boolean>(false);
   
   // Veri durumları
-  const [featuredPlaylists, setFeaturedPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [newReleases, setNewReleases] = useState<SpotifyAlbum[]>([]);
   const [searchResults, setSearchResults] = useState<{
     tracks: SpotifyTrack[];
@@ -75,32 +70,6 @@ export const useMusic = (): UseMusic => {
   // Demo için token (gerçek uygulamada AuthContext'ten alınacak)
   // Not: Bu örnek için bir mock token kullanıyoruz.
   const mockToken = 'mock_token';
-  
-  // Öne çıkan çalma listelerini getir
-  const fetchFeaturedPlaylists = useCallback(async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated');
-      return;
-    }
-    
-    try {
-      setIsLoadingFeatured(true);
-      setError(null);
-      
-      // API çağrısı
-      // Gerçek uyg.da auth.getStoredToken() ile token alınır
-      const response = await music.getFeaturedPlaylists(mockToken);
-      
-      // Yanıttan çalma listelerini al
-      const playlists = response.playlists.items;
-      setFeaturedPlaylists(playlists);
-    } catch (err) {
-      console.error('Error fetching featured playlists:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setIsLoadingFeatured(false);
-    }
-  }, [isAuthenticated]);
   
   // Yeni çıkan albümleri getir
   const fetchNewReleases = useCallback(async () => {
@@ -132,7 +101,8 @@ export const useMusic = (): UseMusic => {
     query: string,
     types: string[] = ['track', 'artist', 'album', 'playlist']
   ) => {
-    if (!isAuthenticated || !query.trim()) {
+    if (!isAuthenticated) {
+      console.log('User not authenticated');
       return;
     }
     
@@ -141,14 +111,14 @@ export const useMusic = (): UseMusic => {
       setError(null);
       
       // API çağrısı
-      const results = await music.search(mockToken, query, types);
+      const response = await music.search(mockToken, query, types);
       
-      // Sonuçları ayarla (her tür için kontrol et)
+      // Yanıttan sonuçları al
       setSearchResults({
-        tracks: results.tracks?.items || [],
-        artists: results.artists?.items || [],
-        albums: results.albums?.items || [],
-        playlists: results.playlists?.items || [],
+        tracks: response.tracks?.items || [],
+        artists: response.artists?.items || [],
+        albums: response.albums?.items || [],
+        playlists: response.playlists?.items || [],
       });
     } catch (err) {
       console.error('Error searching:', err);
@@ -169,14 +139,12 @@ export const useMusic = (): UseMusic => {
       setIsLoadingUserStats(true);
       setError(null);
       
-      // API çağrıları
-      const [tracksResponse, artistsResponse] = await Promise.all([
-        music.getUserTopTracks(mockToken),
-        music.getUserTopArtists(mockToken),
-      ]);
-      
-      // Sonuçları ayarla
+      // API çağrısı - Top Tracks
+      const tracksResponse = await music.getUserTopTracks(mockToken);
       setUserTopTracks(tracksResponse.items);
+      
+      // API çağrısı - Top Artists
+      const artistsResponse = await music.getUserTopArtists(mockToken);
       setUserTopArtists(artistsResponse.items);
     } catch (err) {
       console.error('Error fetching user top items:', err);
@@ -249,23 +217,20 @@ export const useMusic = (): UseMusic => {
     }
   }, [isAuthenticated, play]);
   
-  // Sayfa yüklendiğinde önerilen içerikleri getir
+  // Sayfa yüklendiğinde yeni çıkanları getir
   useEffect(() => {
     if (isAuthenticated) {
-      fetchFeaturedPlaylists();
       fetchNewReleases();
     }
-  }, [isAuthenticated, fetchFeaturedPlaylists, fetchNewReleases]);
+  }, [isAuthenticated, fetchNewReleases]);
   
   return {
     // Veri yükleme durumları
-    isLoadingFeatured,
     isLoadingNewReleases,
     isLoadingSearch,
     isLoadingUserStats,
     
     // Veri
-    featuredPlaylists,
     newReleases,
     searchResults,
     userTopTracks,
@@ -275,7 +240,6 @@ export const useMusic = (): UseMusic => {
     error,
     
     // İşlevler
-    fetchFeaturedPlaylists,
     fetchNewReleases,
     search,
     fetchUserTopItems,

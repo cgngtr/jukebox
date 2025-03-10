@@ -17,15 +17,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { music } from '../../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { usePlayer } from '../../context/PlayerContext';
 
 // Search history key for AsyncStorage
 const SEARCH_HISTORY_KEY = 'spotify_search_history';
 
 const SearchResultsScreen: React.FC = () => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { getToken } = useAuth();
   const navigation = useNavigation();
   const route = useRoute();
+  const player = usePlayer();
   
   // Extract params from route
   const { query = '', category = 'all' } = route.params as { query: string; category: string };
@@ -137,14 +139,24 @@ const SearchResultsScreen: React.FC = () => {
     }
   };
 
+  // Parçayı çalma işlevi
+  const handlePlayTrack = async (track: any) => {
+    try {
+      // Play the selected track
+      await player.play(track);
+    } catch (error) {
+      console.error('Track playback error:', error);
+    }
+  };
+
   // Render track search result
   const renderTrackResult = (item: any) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.resultItem}
       onPress={() => handleSearchItemPress(item, 'track')}
     >
       <Image 
-        source={{ uri: item.album.images[0]?.url || 'https://via.placeholder.com/60' }} 
+        source={{ uri: item.album?.images[0]?.url || 'https://via.placeholder.com/60' }} 
         style={styles.resultImage} 
       />
       <View style={styles.resultTextContainer}>
@@ -155,7 +167,13 @@ const SearchResultsScreen: React.FC = () => {
           {item.artists.map((artist: any) => artist.name).join(', ')}
         </Text>
       </View>
-      <TouchableOpacity style={styles.playButton}>
+      <TouchableOpacity 
+        style={styles.playButton}
+        onPress={(e: any) => {
+          e.stopPropagation(); // Prevent navigation
+          handlePlayTrack(item);
+        }}
+      >
         <Ionicons name="play" size={20} color={theme.colors.primary} />
       </TouchableOpacity>
     </TouchableOpacity>

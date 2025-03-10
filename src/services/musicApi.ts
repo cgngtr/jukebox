@@ -164,12 +164,25 @@ const fetchFromSpotify = async (
       throw new Error(`Spotify API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    // Debug: API cevabının ilk 100 karakterini göster
-    console.log(`Response data (preview):`, JSON.stringify(data).substring(0, 100) + '...');
-    console.log(`---------------------`);
-    
-    return data;
+    // 204 No Content durumunda boş JSON döndür
+    if (response.status === 204) {
+      console.log('204 No Content response, returning empty object');
+      return {};
+    }
+
+    try {
+      const data = await response.json();
+      // Debug: API cevabının ilk 100 karakterini göster
+      console.log(`Response data (preview):`, JSON.stringify(data).substring(0, 100) + '...');
+      console.log(`---------------------`);
+      
+      return data;
+    } catch (jsonError) {
+      console.warn('Could not parse JSON response:', jsonError);
+      console.log(`---------------------`);
+      // JSON parse hatası durumunda boş obje döndür
+      return {};
+    }
   } catch (error) {
     console.error('Error fetching from Spotify:', error);
     throw error;
@@ -436,6 +449,172 @@ export const getUserFollowedArtists = async (
   }
 };
 
+// Kullanıcının şu an çalan şarkısını getir
+export const getCurrentlyPlaying = async (
+  token: string,
+  market: string = DEFAULT_MARKET
+): Promise<SpotifyCurrentlyPlaying> => {
+  return fetchFromSpotify(`/me/player/currently-playing?market=${market}`, token);
+};
+
+// Çalma durumunu getir (oynatıcı durumu bilgisi)
+export const getPlayerState = async (
+  token: string
+): Promise<SpotifyPlayerState> => {
+  return fetchFromSpotify('/me/player', token);
+};
+
+// Bir şarkıyı oynat
+export const playTrack = async (
+  token: string,
+  uri: string | string[],
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play';
+  
+  // Eğer tek bir uri gelirse array olarak sarmalayalım
+  const uris = Array.isArray(uri) ? uri : [uri];
+  
+  return fetchFromSpotify(
+    endpoint,
+    token,
+    'PUT',
+    { uris }
+  );
+};
+
+// Belirli bir albüm veya playlist'i oynat
+export const playContext = async (
+  token: string,
+  contextUri: string,
+  offset?: number,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play';
+  
+  const body: any = { context_uri: contextUri };
+  
+  // Ofset belirtilmişse ekle
+  if (offset !== undefined) {
+    body.offset = { position: offset };
+  }
+  
+  return fetchFromSpotify(
+    endpoint,
+    token,
+    'PUT',
+    body
+  );
+};
+
+// Çalmayı durdur
+export const pausePlayback = async (
+  token: string,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/pause?device_id=${deviceId}` : '/me/player/pause';
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Çalmayı devam ettir
+export const resumePlayback = async (
+  token: string,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play';
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Sonraki şarkıya geç
+export const skipToNext = async (
+  token: string,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/next?device_id=${deviceId}` : '/me/player/next';
+  return fetchFromSpotify(endpoint, token, 'POST');
+};
+
+// Önceki şarkıya geç
+export const skipToPrevious = async (
+  token: string,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId ? `/me/player/previous?device_id=${deviceId}` : '/me/player/previous';
+  return fetchFromSpotify(endpoint, token, 'POST');
+};
+
+// Belirli bir pozisyona atla
+export const seekToPosition = async (
+  token: string,
+  positionMs: number,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId 
+    ? `/me/player/seek?position_ms=${positionMs}&device_id=${deviceId}`
+    : `/me/player/seek?position_ms=${positionMs}`;
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Karıştırma modunu aç/kapat
+export const setShuffleMode = async (
+  token: string,
+  state: boolean,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId 
+    ? `/me/player/shuffle?state=${state}&device_id=${deviceId}`
+    : `/me/player/shuffle?state=${state}`;
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Tekrarlama modunu ayarla
+export const setRepeatMode = async (
+  token: string,
+  state: 'off' | 'track' | 'context',
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId 
+    ? `/me/player/repeat?state=${state}&device_id=${deviceId}`
+    : `/me/player/repeat?state=${state}`;
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Ses seviyesini ayarla
+export const setVolume = async (
+  token: string,
+  volumePercent: number,
+  deviceId?: string
+): Promise<any> => {
+  const endpoint = deviceId 
+    ? `/me/player/volume?volume_percent=${volumePercent}&device_id=${deviceId}`
+    : `/me/player/volume?volume_percent=${volumePercent}`;
+  return fetchFromSpotify(endpoint, token, 'PUT');
+};
+
+// Kullanılabilir Spotify cihazlarını getir
+export const getAvailableDevices = async (
+  token: string
+): Promise<SpotifyDevices> => {
+  return fetchFromSpotify('/me/player/devices', token);
+};
+
+// Etkin oynatma cihazını değiştir
+export const transferPlayback = async (
+  token: string,
+  deviceId: string,
+  play: boolean = false
+): Promise<any> => {
+  return fetchFromSpotify(
+    '/me/player',
+    token,
+    'PUT',
+    {
+      device_ids: [deviceId],
+      play
+    }
+  );
+};
+
 // Tip tanımlamaları
 export interface SpotifyAuthResponse {
   access_token: string;
@@ -658,4 +837,61 @@ export interface SpotifyRecentlyPlayed {
 
 export interface SpotifyArtistTopTracks {
   tracks: SpotifyTrack[];
+}
+
+export interface SpotifyCurrentlyPlaying {
+  timestamp: number;
+  context: {
+    external_urls: {
+      spotify: string;
+    };
+    href: string;
+    type: string;
+    uri: string;
+  } | null;
+  progress_ms: number;
+  item: SpotifyTrack | null;
+  currently_playing_type: string;
+  is_playing: boolean;
+}
+
+export interface SpotifyPlayerState {
+  device: {
+    id: string;
+    is_active: boolean;
+    is_private_session: boolean;
+    is_restricted: boolean;
+    name: string;
+    type: string;
+    volume_percent: number;
+  };
+  shuffle_state: boolean;
+  repeat_state: 'off' | 'track' | 'context';
+  timestamp: number;
+  context: {
+    external_urls: {
+      spotify: string;
+    };
+    href: string;
+    type: string;
+    uri: string;
+  } | null;
+  progress_ms: number;
+  item: SpotifyTrack | null;
+  currently_playing_type: string;
+  is_playing: boolean;
+}
+
+export interface SpotifyDevice {
+  id: string;
+  is_active: boolean;
+  is_private_session: boolean;
+  is_restricted: boolean;
+  name: string;
+  type: string;
+  volume_percent: number;
+}
+
+export interface SpotifyDevices {
+  devices: SpotifyDevice[];
 }

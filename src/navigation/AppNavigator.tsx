@@ -10,6 +10,7 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import ArtistDetailScreen from '../screens/music/ArtistDetailScreen';
 import AlbumDetailScreen from '../screens/music/AlbumDetailScreen';
 import TrackDetailScreen from '../screens/music/TrackDetailScreen';
+import PlayerScreen from '../screens/music/PlayerScreen';
 import { PlaylistDetailScreen } from '../screens/music/DetailScreens';
 import ArtistAlbumsScreen from '../screens/music/ArtistAlbumsScreen';
 import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
@@ -32,6 +33,7 @@ export type AppStackParamList = {
   ArtistDetail: { id: string };
   AlbumDetail: { id: string };
   TrackDetail: { id: string };
+  Player: undefined;
   PlaylistDetail: { id: string };
   ArtistAlbums: { artistId: string; artistName: string };
   ListeningRoomScreen: { id: string };
@@ -149,6 +151,15 @@ const AppNavigator: React.FC = () => {
           options={{
             headerShown: false,
             animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="Player" 
+          component={PlayerScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
           }}
         />
         <Stack.Screen 

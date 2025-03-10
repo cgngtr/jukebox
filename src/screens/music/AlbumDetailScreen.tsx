@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius } from '../../styles';
 import { music } from '../../api';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { usePlayer } from '../../context/PlayerContext';
 
 const AlbumDetailScreen = () => {
   const { theme } = useTheme();
@@ -27,6 +28,8 @@ const AlbumDetailScreen = () => {
   
   // @ts-ignore
   const { id } = route.params;
+  
+  const player = usePlayer();
   
   useEffect(() => {
     loadAlbumData();
@@ -48,6 +51,26 @@ const AlbumDetailScreen = () => {
       setError(error.message || 'Failed to load album data');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Parçayı çalma işlevi
+  const handlePlayTrack = async (track: any, index: number) => {
+    try {
+      // Convert album tracks to SpotifyTrack format if needed
+      const trackList = album.tracks.items.map((track: any) => ({
+        ...track,
+        album: {
+          id: album.id,
+          name: album.name,
+          images: album.images
+        }
+      }));
+      
+      // Play the selected track with the album's track list
+      await player.play(trackList[index], trackList);
+    } catch (error) {
+      console.error('Track playback error:', error);
     }
   };
   
@@ -151,7 +174,10 @@ const AlbumDetailScreen = () => {
                     {track.artists.map((a: any) => a.name).join(', ')}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.playButton}>
+                <TouchableOpacity 
+                  style={styles.playButton}
+                  onPress={() => handlePlayTrack(track, index)}
+                >
                   <Ionicons name="play" size={22} color={theme.colors.primary} />
                 </TouchableOpacity>
               </TouchableOpacity>

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius } from '../../styles';
 import { music } from '../../api';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { usePlayer } from '../../context/PlayerContext';
 
 const TrackDetailScreen = () => {
   const { theme } = useTheme();
@@ -24,6 +25,7 @@ const TrackDetailScreen = () => {
   const [track, setTrack] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const player = usePlayer();
   
   // @ts-ignore
   const { id } = route.params;
@@ -48,6 +50,27 @@ const TrackDetailScreen = () => {
       setError(error.message || 'Failed to load track data');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Parçayı çalma işlevi
+  const handlePlayTrack = async () => {
+    try {
+      if (!track) return;
+      
+      // Convert track to SpotifyTrack format if needed
+      const spotifyTrack = {
+        ...track,
+        uri: `spotify:track:${track.id}`,
+        external_urls: {
+          spotify: `https://open.spotify.com/track/${track.id}`
+        }
+      };
+      
+      // Play the track
+      await player.play(spotifyTrack);
+    } catch (error) {
+      console.error('Track playback error:', error);
     }
   };
   
@@ -139,6 +162,7 @@ const TrackDetailScreen = () => {
           {/* Play button */}
           <TouchableOpacity 
             style={[styles.playTrackButton, { backgroundColor: theme.colors.primary }]}
+            onPress={handlePlayTrack}
           >
             <Ionicons name="play" size={24} color="white" />
             <Text style={styles.playText}>Play</Text>

@@ -162,7 +162,7 @@ const SearchScreen: React.FC = () => {
         }}
       >
         <View style={[styles.searchIconContainer, { backgroundColor: theme.colors.card }]}>
-          <Ionicons name={iconName as any} size={18} color={theme.colors.text.secondary} />
+          <Ionicons name={iconName as any} size={20} color={theme.colors.text.secondary} />
         </View>
         <View style={styles.searchItemContent}>
           <Text style={[styles.searchItemText, { color: theme.colors.text.primary }]}>
@@ -207,7 +207,7 @@ const SearchScreen: React.FC = () => {
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
               <Ionicons 
                 name="close-circle" 
-                size={18} 
+                size={20} 
                 color={theme.colors.text.secondary}
               />
             </TouchableOpacity>
@@ -291,11 +291,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingTop: spacing.sm,
     paddingBottom: layout.tabBarHeight + spacing.xl, // Extra bottom padding for tabBar
   },
   searchHeader: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -316,30 +317,35 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   categoriesContainer: {
-    marginVertical: spacing.xs,
+    marginVertical: spacing.sm,
   },
   categoriesList: {
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
   },
   categoryPill: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 20,
     marginRight: spacing.sm,
+    minWidth: 20,
+    alignItems: 'center',
   },
   categoryText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   section: {
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.base,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   sectionTitle: {
     fontSize: 20,
@@ -352,21 +358,22 @@ const styles = StyleSheet.create({
   searchListCard: {
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 0,
   },
   searchItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
   },
   searchIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   searchItemContent: {
     flex: 1,
@@ -380,11 +387,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   searchItemAction: {
-    padding: spacing.xs,
+    padding: spacing.sm,
   },
   divider: {
     height: 1,
-    marginHorizontal: spacing.base,
+    marginHorizontal: spacing.md,
   },
 });
 

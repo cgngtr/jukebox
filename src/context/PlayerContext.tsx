@@ -1,6 +1,6 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { SpotifyTrack } from '../services/musicApi';
+import { SpotifyTrack, SpotifyCurrentlyPlaying, SpotifyDevice } from '../services/musicApi';
 import { music } from '../api';
 
 // Player durumu için tip tanımlaması
@@ -13,6 +13,8 @@ interface PlayerState {
   duration: number;
   isShuffled: boolean;
   repeatMode: 'off' | 'track' | 'context';
+  deviceId: string | null;
+  mode: 'browse' | 'play';  // Yeni mod özelliği
 }
 
 // Player context tip tanımlaması
@@ -41,6 +43,8 @@ const defaultPlayerState: PlayerState = {
   duration: 0,
   isShuffled: false,
   repeatMode: 'off',
+  deviceId: null,
+  mode: 'browse'  // Varsayılan olarak browse modunda başla
 };
 
 // Varsayılan değerlerle context oluştur
@@ -69,93 +73,240 @@ interface PlayerProviderProps {
 
 // Player Provider bileşeni
 export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, getToken } = useAuth();
   const [playerState, setPlayerState] = useState<PlayerState>(defaultPlayerState);
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
-
-  // İlerleme saat aralığını ayarla/temizle
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  
+  // Mode değişikliğini takip et
   useEffect(() => {
-    if (playerState.isPlaying) {
-      const interval = setInterval(() => {
-        setPlayerState((prev) => ({
-          ...prev,
-          progress: Math.min(prev.progress + 1000, prev.duration),
-        }));
-      }, 1000);
-
-      setProgressInterval(interval);
-    } else if (progressInterval) {
-      clearInterval(progressInterval);
-      setProgressInterval(null);
+    if (isAuthenticated) {
+      checkDeviceAvailability();
+    } else {
+      setPlayerState(prev => ({ ...prev, mode: 'browse' }));
     }
+  }, [isAuthenticated]);
 
-    return () => {
-      if (progressInterval) {
-        clearInterval(progressInterval);
+  // Cihaz durumunu kontrol et
+  const checkDeviceAvailability = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        setPlayerState(prev => ({ ...prev, mode: 'browse' }));
+        return;
       }
-    };
-  }, [playerState.isPlaying, progressInterval]);
 
-  // Parça bittiğinde sonraki parçaya geç
-  useEffect(() => {
-    if (
-      playerState.progress >= playerState.duration &&
-      playerState.duration > 0
-    ) {
-      if (playerState.repeatMode === 'track') {
-        // Parça tekrarla
-        setPlayerState((prev) => ({
-          ...prev,
-          progress: 0,
-        }));
-      } else {
-        // Sonraki parçaya geç
-        next();
-      }
+      const devices = await music.getAvailableDevices(token);
+      const hasDevices = devices.devices.length > 0;
+      
+      setPlayerState(prev => ({
+        ...prev,
+        mode: hasDevices ? 'play' : 'browse'
+      }));
+    } catch (error) {
+      console.error('Error checking device availability:', error);
+      setPlayerState(prev => ({ ...prev, mode: 'browse' }));
     }
-  }, [playerState.progress, playerState.duration, playerState.repeatMode]);
+  };
 
-  // Parçayı çal
-  const play = async (track?: SpotifyTrack, trackList?: SpotifyTrack[]) => {
-    if (!isAuthenticated) {
-      console.error('User not authenticated');
+  // Mevcut çalan şarkı bilgisini almak için polling
+  const pollPlaybackState = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const token = await getToken();
+      if (!token) return;
+      
+      try {
+        // Mevcut çalan şarkıyı al
+        const currentlyPlaying = await music.getCurrentlyPlaying(token);
+        
+        if (currentlyPlaying && currentlyPlaying.item) {
+          setPlayerState(prev => ({
+            ...prev,
+            isPlaying: currentlyPlaying.is_playing,
+            currentTrack: currentlyPlaying.item,
+            progress: currentlyPlaying.progress_ms || 0,
+            duration: currentlyPlaying.item?.duration_ms || 0,
+          }));
+        }
+      } catch (currentlyPlayingError) {
+        console.error('Error fetching currently playing:', currentlyPlayingError);
+        // Hata durumunda sessizce devam et
+      }
+      
+      try {
+        // Oynatıcı durumunu al
+        const playerData = await music.getPlayerState(token);
+        
+        if (playerData) {
+          setPlayerState(prev => ({
+            ...prev,
+            isShuffled: playerData.shuffle_state,
+            repeatMode: playerData.repeat_state,
+            deviceId: playerData.device?.id || null,
+            volume: playerData.device?.volume_percent ? playerData.device.volume_percent / 100 : prev.volume,
+          }));
+        }
+      } catch (playerStateError) {
+        console.error('Error fetching player state:', playerStateError);
+        // Hata durumunda sessizce devam et
+      }
+    } catch (error) {
+      console.error('Error polling playback state:', error);
+    }
+  }, [isAuthenticated, getToken]);
+  
+  // Cihaz kontrolü için yeni fonksiyonlar
+  const ensureActiveDevice = async (token: string): Promise<string | null> => {
+    try {
+      // Mevcut cihazları kontrol et
+      const devices = await music.getAvailableDevices(token);
+      console.log('Available devices:', devices.devices);
+      
+      // Hiç cihaz yoksa kullanıcıya yönlendirici mesaj göster
+      if (devices.devices.length === 0) {
+        alert(
+          'Spotify cihazı bulunamadı!\n\n' +
+          'Lütfen şu adımları takip edin:\n' +
+          '1. Spotify uygulamasını açın\n' +
+          '2. Herhangi bir şarkıyı çalmaya başlatın\n' +
+          '3. Şarkıyı durdurun (opsiyonel)\n' +
+          '4. Tekrar uygulamamızdan şarkı çalmayı deneyin'
+        );
+        return null;
+      }
+      
+      // Aktif cihaz var mı kontrol et
+      const activeDevice = devices.devices.find(device => device.is_active);
+      
+      if (activeDevice) {
+        console.log('Found active device:', activeDevice.name);
+        return activeDevice.id;
+      }
+      
+      // Aktif cihaz yoksa ilk cihazı aktifleştir
+      const deviceToActivate = devices.devices[0];
+      console.log('Activating device:', deviceToActivate.name);
+      
+      try {
+        await music.transferPlayback(token, deviceToActivate.id, true);
+        console.log('Device activated successfully');
+        
+        // Cihazın aktifleşmesi için kısa bir süre bekle
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return deviceToActivate.id;
+      } catch (err) {
+        console.error('Error activating device:', err);
+        alert(
+          'Cihaz aktifleştirilemedi!\n\n' +
+          'Lütfen şu adımları takip edin:\n' +
+          '1. Spotify uygulamasında bir şarkı çalın\n' +
+          '2. Şarkıyı durdurun\n' +
+          '3. Tekrar uygulamamızdan şarkı çalmayı deneyin'
+        );
+        return null;
+      }
+    } catch (error) {
+      console.error('Error ensuring active device:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('PREMIUM_REQUIRED')) {
+          alert('Bu özellik için Spotify Premium aboneliği gereklidir.');
+        } else {
+          alert(
+            'Spotify bağlantısında bir sorun oluştu.\n\n' +
+            'Lütfen şu adımları takip edin:\n' +
+            '1. Spotify uygulamasını açın\n' +
+            '2. Bir şarkı çalın\n' +
+            '3. Tekrar deneyin'
+          );
+        }
+      }
+      return null;
+    }
+  };
+  
+  // Play fonksiyonunu güncelle
+  const play = useCallback(async (track?: SpotifyTrack, trackList?: SpotifyTrack[]) => {
+    if (playerState.mode === 'browse') {
+      alert(
+        'Müzik çalma özelliğini kullanmak için:\n\n' +
+        '1. Spotify uygulamasını açın\n' +
+        '2. Bir şarkı çalın (ve duraklatın)\n' +
+        '3. Tekrar deneyin\n\n' +
+        'Not: Bu özellik için Spotify Premium gereklidir.'
+      );
       return;
     }
 
     try {
+      const token = await getToken();
+      if (!token) {
+        console.error('No token available');
+        return;
+      }
+      
+      // Aktif cihaz olduğundan emin ol
+      const deviceId = await ensureActiveDevice(token);
+      
+      if (!deviceId) {
+        console.error('No active device available');
+        alert('Lütfen Spotify uygulamasını açın ve bir cihazı aktif hale getirin.');
+        return;
+      }
+      
       // Yeni parça gelmişse onu çal, yoksa queue'daki ilk parçayı
       const trackToPlay = track || playerState.queue[0] || null;
-
+      
       if (!trackToPlay) {
         console.error('No track to play');
         return;
       }
-
-      // Parçayı çal (gerçek impl. için Spotify API veya React Native Sound kullanılabilir)
+      
+      // Spotify API ile çal
+      await music.playTrack(token, trackToPlay.uri, deviceId);
+      
       console.log('Playing track:', trackToPlay.name);
-
+      
       // Player durumunu güncelle
-      setPlayerState((prev) => ({
+      setPlayerState(prev => ({
         ...prev,
         isPlaying: true,
         currentTrack: trackToPlay,
-        queue: trackList ? [...trackList] : track ? [track, ...prev.queue] : prev.queue,
-        progress: 0,
-        duration: trackToPlay.duration_ms,
+        deviceId,
+        queue: trackList ? [...trackList] : prev.queue
       }));
+      
     } catch (error) {
       console.error('Error playing track:', error);
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        if (errorMessage.includes('NO_ACTIVE_DEVICE')) {
+          alert('Lütfen Spotify uygulamasını açın ve bir cihazı aktif hale getirin.');
+        } else if (errorMessage.includes('PREMIUM_REQUIRED')) {
+          setPlayerState(prev => ({ ...prev, mode: 'browse' }));
+          alert('Bu özellik için Spotify Premium aboneliği gereklidir.');
+        } else {
+          alert('Şarkı çalınırken bir hata oluştu. Lütfen tekrar deneyin.');
+        }
+      }
     }
-  };
+  }, [playerState.mode, getToken, playerState.queue]);
 
   // Çalmayı duraklat
   const pause = async () => {
-    if (!isAuthenticated || !playerState.isPlaying) {
+    if (!playerState.isPlaying) {
       return;
     }
 
     try {
-      // Çalmayı duraklat (gerçek impl. için Spotify API veya React Native Sound kullanılabilir)
+      const token = await getToken();
+      if (!token) return;
+      
+      // Spotify API ile duraklat
+      await music.pausePlayback(token, playerState.deviceId || undefined);
+
       console.log('Pausing playback');
 
       // Player durumunu güncelle
@@ -170,12 +321,25 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   // Çalmayı devam ettir
   const resume = async () => {
-    if (!isAuthenticated || playerState.isPlaying || !playerState.currentTrack) {
+    if (playerState.isPlaying || !playerState.currentTrack) {
       return;
     }
 
     try {
-      // Çalmayı devam ettir (gerçek impl. için Spotify API veya React Native Sound kullanılabilir)
+      const token = await getToken();
+      if (!token) return;
+      
+      // Aktif cihaz kontrolü yap
+      const hasActiveDevice = await ensureActiveDevice(token);
+      if (!hasActiveDevice) {
+        console.error('No active device available');
+        alert('Lütfen Spotify uygulamasını açın ve bir cihazınızda aktif hale getirin.');
+        return;
+      }
+      
+      // Spotify API ile devam ettir
+      await music.resumePlayback(token, playerState.deviceId || undefined);
+
       console.log('Resuming playback');
 
       // Player durumunu güncelle
@@ -190,23 +354,15 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   // Sonraki parçaya geç
   const next = async () => {
-    if (!isAuthenticated || playerState.queue.length === 0) {
-      return;
-    }
-
     try {
-      // Queue'dan sonraki parçayı al
-      const nextTrack = playerState.queue[0];
-
-      // Player durumunu güncelle
-      setPlayerState((prev) => ({
-        ...prev,
-        isPlaying: true,
-        currentTrack: nextTrack,
-        queue: prev.queue.slice(1), // İlk parçayı çıkar
-        progress: 0,
-        duration: nextTrack.duration_ms,
-      }));
+      const token = await getToken();
+      if (!token) return;
+      
+      // Spotify API ile sonraki parçaya geç
+      await music.skipToNext(token, playerState.deviceId || undefined);
+      
+      // Durumu güncelle
+      pollPlaybackState();
     } catch (error) {
       console.error('Error playing next track:', error);
     }
@@ -214,30 +370,26 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   // Önceki parçaya dön
   const previous = async () => {
-    if (!isAuthenticated || !playerState.currentTrack) {
-      return;
-    }
-
     try {
+      const token = await getToken();
+      if (!token) return;
+      
       // Eğer parça 3 saniyeden daha uzun süre çalındıysa, parçayı baştan başlat
       if (playerState.progress > 3000) {
+        await music.seekToPosition(token, 0, playerState.deviceId || undefined);
+        
         setPlayerState((prev) => ({
           ...prev,
           progress: 0,
         }));
         return;
       }
-
-      // Önceki parça varsa (gerçek uyg.da history tutulur)
-      console.log('Playing previous track');
-
-      // Demo amaçlı basit bir önceki parça mantığı
-      if (playerState.currentTrack) {
-        setPlayerState((prev) => ({
-          ...prev,
-          progress: 0,
-        }));
-      }
+      
+      // Spotify API ile önceki parçaya geç
+      await music.skipToPrevious(token, playerState.deviceId || undefined);
+      
+      // Durumu güncelle
+      pollPlaybackState();
     } catch (error) {
       console.error('Error playing previous track:', error);
     }
@@ -245,59 +397,57 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   // Belirli bir konuma git
   const seek = async (position: number) => {
-    if (!isAuthenticated || !playerState.currentTrack) {
+    if (!playerState.currentTrack) {
       return;
     }
 
     try {
-      // Belirli bir konuma git (gerçek impl. için Spotify API veya React Native Sound kullanılabilir)
-      console.log('Seeking to position:', position);
-
+      const token = await getToken();
+      if (!token) return;
+      
+      // Spotify API ile pozisyona git
+      await music.seekToPosition(token, position, playerState.deviceId || undefined);
+      
       // Player durumunu güncelle
       setPlayerState((prev) => ({
         ...prev,
-        progress: Math.min(Math.max(position, 0), prev.duration),
+        progress: position,
       }));
     } catch (error) {
-      console.error('Error seeking:', error);
+      console.error('Error seeking to position:', error);
     }
   };
 
-  // Karıştırmayı aç/kapat
+  // Şarkı sırasını karıştır/normal sıraya getir
   const toggleShuffle = async () => {
-    if (!isAuthenticated) {
-      return;
-    }
-
     try {
-      // Rastgele çalmayı aç/kapat (gerçek impl. için Spotify API kullanılabilir)
+      const token = await getToken();
+      if (!token) return;
+      
       const newShuffleState = !playerState.isShuffled;
-      console.log('Setting shuffle to:', newShuffleState);
-
+      
+      // Spotify API ile karıştırma durumunu değiştir
+      await music.setShuffleMode(token, newShuffleState, playerState.deviceId || undefined);
+      
       // Player durumunu güncelle
       setPlayerState((prev) => ({
         ...prev,
         isShuffled: newShuffleState,
-        // Karıştırma açıldıysa çalma listesini karıştır
-        queue: newShuffleState
-          ? [...prev.queue].sort(() => Math.random() - 0.5)
-          : [...prev.queue], // Basit karıştırma
       }));
     } catch (error) {
-      console.error('Error toggling shuffle:', error);
+      console.error('Error toggling shuffle mode:', error);
     }
   };
 
-  // Tekrarlama modunu ayarla
+  // Tekrarlama modunu değiştir
   const setRepeatMode = async (mode: 'off' | 'track' | 'context') => {
-    if (!isAuthenticated) {
-      return;
-    }
-
     try {
-      // Tekrarlama modunu ayarla (gerçek impl. için Spotify API kullanılabilir)
-      console.log('Setting repeat mode to:', mode);
-
+      const token = await getToken();
+      if (!token) return;
+      
+      // Spotify API ile tekrarlama modunu değiştir
+      await music.setRepeatMode(token, mode, playerState.deviceId || undefined);
+      
       // Player durumunu güncelle
       setPlayerState((prev) => ({
         ...prev,
@@ -310,35 +460,27 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
 
   // Ses seviyesini ayarla
   const setVolume = async (volume: number) => {
-    if (!isAuthenticated) {
-      return;
-    }
-
     try {
-      // Ses seviyesini ayarla (gerçek impl. için Spotify API veya React Native Sound kullanılabilir)
-      const normalizedVolume = Math.min(Math.max(volume, 0), 1);
-      console.log('Setting volume to:', normalizedVolume);
-
+      const token = await getToken();
+      if (!token) return;
+      
+      // Spotify API ile ses seviyesini ayarla (0-100 arası)
+      const volumePercent = Math.round(volume * 100);
+      await music.setVolume(token, volumePercent, playerState.deviceId || undefined);
+      
       // Player durumunu güncelle
       setPlayerState((prev) => ({
         ...prev,
-        volume: normalizedVolume,
+        volume,
       }));
     } catch (error) {
       console.error('Error setting volume:', error);
     }
   };
 
-  // Kuyruğa parça ekle
+  // Sıraya şarkı ekle
   const addToQueue = async (track: SpotifyTrack) => {
-    if (!isAuthenticated) {
-      return;
-    }
-
     try {
-      // Kuyruğa parça ekle
-      console.log('Adding track to queue:', track.name);
-
       // Player durumunu güncelle
       setPlayerState((prev) => ({
         ...prev,
@@ -349,7 +491,7 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
     }
   };
 
-  // Kuyruğu temizle
+  // Sırayı temizle
   const clearQueue = () => {
     setPlayerState((prev) => ({
       ...prev,
@@ -357,26 +499,27 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
     }));
   };
 
-  // Context değerini memoize et
-  const contextValue = React.useMemo(
-    () => ({
-      playerState,
-      play,
-      pause,
-      resume,
-      next,
-      previous,
-      seek,
-      toggleShuffle,
-      setRepeatMode,
-      setVolume,
-      addToQueue,
-      clearQueue,
-    }),
-    [playerState]
-  );
+  // Değerleri context ile sağla
+  const contextValue: PlayerContextType = {
+    playerState,
+    play,
+    pause,
+    resume,
+    next,
+    previous,
+    seek,
+    toggleShuffle,
+    setRepeatMode,
+    setVolume,
+    addToQueue,
+    clearQueue,
+  };
 
-  return <PlayerContext.Provider value={contextValue}>{children}</PlayerContext.Provider>;
+  return (
+    <PlayerContext.Provider value={contextValue}>
+      {children}
+    </PlayerContext.Provider>
+  );
 };
 
 export default PlayerContext;

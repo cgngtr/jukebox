@@ -27,6 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius } from '../../styles';
 import { music } from '../../api';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { usePlayer } from '../../context/PlayerContext';
 
 // Playlist Detail Screen
 export const PlaylistDetailScreen = () => {
@@ -37,6 +38,7 @@ export const PlaylistDetailScreen = () => {
   const [playlist, setPlaylist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const player = usePlayer();
   
   // @ts-ignore
   const { id } = route.params;
@@ -61,6 +63,22 @@ export const PlaylistDetailScreen = () => {
       setError(error.message || 'Failed to load playlist data');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Parçayı çalma işlevi
+  const handlePlayTrack = async (track: any, index: number) => {
+    try {
+      // Convert playlist tracks to SpotifyTrack format if needed
+      const trackList = playlist.tracks.items.map((item: any) => ({
+        ...item.track,
+        album: item.track.album
+      }));
+      
+      // Play the selected track with the playlist's track list
+      await player.play(trackList[index], trackList);
+    } catch (error) {
+      console.error('Track playback error:', error);
     }
   };
   
@@ -161,7 +179,10 @@ export const PlaylistDetailScreen = () => {
                     {item.track.artists.map((a: any) => a.name).join(', ')}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.playButton}>
+                <TouchableOpacity 
+                  style={styles.playButton}
+                  onPress={() => handlePlayTrack(item.track, index)}
+                >
                   <Ionicons name="play" size={22} color={theme.colors.primary} />
                 </TouchableOpacity>
               </TouchableOpacity>

@@ -1,4 +1,4 @@
-import * as SpotifyService from '../services/musicApi';
+import * as musicAPI from '../services/musicApi';
 import { DEFAULT_MARKET } from '../services/musicApi';
 
 // Spotify ile ilgili API fonksiyonları
@@ -6,7 +6,7 @@ export const music = {
   // Kullanıcı bilgilerini getir
   getCurrentUser: async (token: string) => {
     try {
-      return await SpotifyService.getCurrentUser(token);
+      return await musicAPI.getCurrentUser(token);
     } catch (error) {
       console.error('Error fetching user profile:', error);
       throw error;
@@ -23,7 +23,7 @@ export const music = {
     offset: number = 0
   ) => {
     try {
-      return await SpotifyService.getFeaturedPlaylists(token, limit, market, locale, timestamp, offset);
+      return await musicAPI.getFeaturedPlaylists(token, limit, market, locale, timestamp, offset);
     } catch (error) {
       console.error('Error fetching featured playlists:', error);
       throw error;
@@ -33,7 +33,7 @@ export const music = {
   // Yeni çıkan albümleri getir
   getNewReleases: async (token: string, limit: number = 20, market: string = DEFAULT_MARKET) => {
     try {
-      return await SpotifyService.getNewReleases(token, limit, market);
+      return await musicAPI.getNewReleases(token, limit, market);
     } catch (error) {
       console.error('Error fetching new releases:', error);
       throw error;
@@ -49,7 +49,7 @@ export const music = {
     market: string = DEFAULT_MARKET
   ) => {
     try {
-      return await SpotifyService.searchItems(token, query, types, limit, market);
+      return await musicAPI.searchItems(token, query, types, limit, market);
     } catch (error) {
       console.error('Error searching items:', error);
       throw error;
@@ -63,7 +63,7 @@ export const music = {
     limit: number = 20
   ) => {
     try {
-      return await SpotifyService.getUserTopTracks(token, timeRange, limit);
+      return await musicAPI.getUserTopTracks(token, timeRange, limit);
     } catch (error) {
       console.error('Error fetching user top tracks:', error);
       throw error;
@@ -77,7 +77,7 @@ export const music = {
     limit: number = 20
   ) => {
     try {
-      return await SpotifyService.getUserTopArtists(token, timeRange, limit);
+      return await musicAPI.getUserTopArtists(token, timeRange, limit);
     } catch (error) {
       console.error('Error fetching user top artists:', error);
       throw error;
@@ -87,7 +87,7 @@ export const music = {
   // Sanatçı detaylarını getir
   getArtist: async (token: string, artistId: string) => {
     try {
-      return await SpotifyService.getArtist(token, artistId);
+      return await musicAPI.getArtist(token, artistId);
     } catch (error) {
       console.error('Error fetching artist details:', error);
       throw error;
@@ -97,7 +97,7 @@ export const music = {
   // Sanatçının en popüler şarkılarını getir
   getArtistTopTracks: async (token: string, artistId: string, market: string = 'US') => {
     try {
-      return await SpotifyService.getArtistTopTracks(token, artistId, market);
+      return await musicAPI.getArtistTopTracks(token, artistId, market);
     } catch (error) {
       console.error('Error fetching artist top tracks:', error);
       throw error;
@@ -107,7 +107,7 @@ export const music = {
   // Albüm detaylarını getir
   getAlbum: async (token: string, albumId: string) => {
     try {
-      return await SpotifyService.getAlbum(token, albumId);
+      return await musicAPI.getAlbum(token, albumId);
     } catch (error) {
       console.error('Error fetching album details:', error);
       throw error;
@@ -117,7 +117,7 @@ export const music = {
   // Şarkı detaylarını getir
   getTrack: async (token: string, trackId: string) => {
     try {
-      return await SpotifyService.getTrack(token, trackId);
+      return await musicAPI.getTrack(token, trackId);
     } catch (error) {
       console.error('Error fetching track details:', error);
       throw error;
@@ -127,7 +127,7 @@ export const music = {
   // Çalma listesi detaylarını getir
   getPlaylist: async (token: string, playlistId: string) => {
     try {
-      return await SpotifyService.getPlaylist(token, playlistId);
+      return await musicAPI.getPlaylist(token, playlistId);
     } catch (error) {
       console.error('Error fetching playlist details:', error);
       throw error;
@@ -137,7 +137,7 @@ export const music = {
   // Belirli bir playlist'in detaylı bilgisini (takipçi sayısı dahil) getir
   getPlaylistDetails: async (token: string, playlistId: string) => {
     try {
-      return await SpotifyService.getPlaylist(token, playlistId);
+      return await musicAPI.getPlaylist(token, playlistId);
     } catch (error) {
       console.error('Error fetching detailed playlist info:', error);
       throw error;
@@ -147,7 +147,7 @@ export const music = {
   // Müzik kategorilerini getir
   getCategories: async (token: string, limit: number = 20, market: string = DEFAULT_MARKET) => {
     try {
-      return await SpotifyService.getCategories(token, limit, market);
+      return await musicAPI.getCategories(token, limit, market);
     } catch (error) {
       console.error('Error fetching categories:', error);
       throw error;
@@ -162,7 +162,7 @@ export const music = {
     market: string = DEFAULT_MARKET
   ) => {
     try {
-      return await SpotifyService.getCategoryPlaylists(token, categoryId, limit, market);
+      return await musicAPI.getCategoryPlaylists(token, categoryId, limit, market);
     } catch (error) {
       console.error('Error fetching category playlists:', error);
       throw error;
@@ -172,7 +172,7 @@ export const music = {
   // Kullanıcının kaydettiği şarkıları getir
   getUserSavedTracks: async (token: string, limit: number = 20, offset: number = 0) => {
     try {
-      return await SpotifyService.getUserSavedTracks(token, limit, offset);
+      return await musicAPI.getUserSavedTracks(token, limit, offset);
     } catch (error) {
       console.error('Error fetching user saved tracks:', error);
       throw error;
@@ -182,7 +182,7 @@ export const music = {
   // Kullanıcının çalma listelerini getir
   getUserPlaylists: async (token: string, limit: number = 20, offset: number = 0) => {
     try {
-      return await SpotifyService.getUserPlaylists(token, limit, offset);
+      return await musicAPI.getUserPlaylists(token, limit, offset);
     } catch (error) {
       console.error('Error fetching user playlists:', error);
       throw error;
@@ -192,7 +192,7 @@ export const music = {
   // Kullanıcının son çalınan şarkılarını getir
   getRecentlyPlayed: async (token: string, limit: number = 20) => {
     try {
-      return await SpotifyService.getRecentlyPlayed(token, limit);
+      return await musicAPI.getRecentlyPlayed(token, limit);
     } catch (error) {
       console.error('Error fetching recently played tracks:', error);
       throw error;
@@ -202,10 +202,26 @@ export const music = {
   // Kullanıcının takip ettiği sanatçıları getir
   getUserFollowedArtists: async (token: string, limit: number = 50) => {
     try {
-      return await SpotifyService.getUserFollowedArtists(token, limit);
+      return await musicAPI.getUserFollowedArtists(token, limit);
     } catch (error) {
       console.error('Error fetching user followed artists:', error);
       throw error;
     }
   },
+
+  // Playback ile ilgili yeni fonksiyonlar
+  getCurrentlyPlaying: musicAPI.getCurrentlyPlaying,
+  getPlayerState: musicAPI.getPlayerState,
+  playTrack: musicAPI.playTrack,
+  playContext: musicAPI.playContext,
+  pausePlayback: musicAPI.pausePlayback,
+  resumePlayback: musicAPI.resumePlayback,
+  skipToNext: musicAPI.skipToNext,
+  skipToPrevious: musicAPI.skipToPrevious,
+  seekToPosition: musicAPI.seekToPosition,
+  setShuffleMode: musicAPI.setShuffleMode,
+  setRepeatMode: musicAPI.setRepeatMode,
+  setVolume: musicAPI.setVolume,
+  getAvailableDevices: musicAPI.getAvailableDevices,
+  transferPlayback: musicAPI.transferPlayback
 };
