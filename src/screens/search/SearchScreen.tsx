@@ -338,14 +338,14 @@ const styles = StyleSheet.create({
   section: {
     marginTop: spacing.md,
     marginBottom: spacing.lg,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.base,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 0,
   },
   sectionTitle: {
     fontSize: 20,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.base,
   },
   searchIconContainer: {
     width: 36,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    marginHorizontal: spacing.md,
+    marginHorizontal: spacing.base,
   },
 });
 

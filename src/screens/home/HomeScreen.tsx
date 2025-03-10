@@ -543,7 +543,11 @@ const HomeScreen: React.FC = () => {
             
             {topTracks.length > 0 ? (
               <View style={{ paddingHorizontal: spacing.base }}>
-                {topTracks.map((track) => renderTrackItem({ item: track, index: 0, separators: { highlight: () => {}, unhighlight: () => {}, updateProps: () => {} } }))}
+                {topTracks.map((track) => (
+                  <React.Fragment key={track.id}>
+                    {renderTrackItem({ item: track, index: 0, separators: { highlight: () => {}, unhighlight: () => {}, updateProps: () => {} } })}
+                  </React.Fragment>
+                ))}
               </View>
             ) : (
               <View style={styles.emptyContainer}>
@@ -555,33 +559,6 @@ const HomeScreen: React.FC = () => {
           </View>
         </ScrollView>
       )}
-      
-      {/* Test Player Buttons - Ekranın sağ alt köşesinde */}
-      <View style={styles.testButtonsContainer}>
-        <TouchableOpacity 
-          style={[
-            styles.testPlayerButton, 
-            { backgroundColor: theme.colors.primary, marginBottom: 8 }
-          ]} 
-          onPress={togglePlayPause}
-        >
-          <Text style={styles.testPlayerButtonText}>
-            {playerState?.isPlaying ? 'Pause' : 'Play Test'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.testPlayerButton, 
-            { backgroundColor: '#1DB954' /* Spotify Green */ }
-          ]} 
-          onPress={playRealMusic}
-        >
-          <Text style={styles.testPlayerButtonText}>
-            Play Spotify
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -598,7 +575,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.lg,
-    paddingHorizontal: spacing.base, // Header için yatay padding korundu
+    paddingHorizontal: spacing.base,
   },
   greeting: {
     fontSize: 16,
@@ -621,14 +598,14 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: spacing.xl,
-    paddingHorizontal: 0, // Section için yatay padding kaldırıldı
+    paddingHorizontal: 0,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.base,
-    paddingHorizontal: spacing.base, // Tüm section başlıkları için aynı yatay padding
+    paddingHorizontal: spacing.base,
   },
   sectionTitle: {
     fontSize: 20,
@@ -639,7 +616,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   albumList: {
-    paddingLeft: spacing.base, // Tüm yatay listeler için aynı sol padding
+    paddingLeft: spacing.base,
     paddingRight: spacing.base / 2,
   },
   albumCard: {
@@ -715,34 +692,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '500',
   },
-  testButtonsContainer: {
-    position: 'absolute',
-    bottom: layout.tabBarHeight + spacing.md,
-    right: spacing.md,
-    alignItems: 'flex-end',
-    zIndex: 100,
-  },
-  testPlayerButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  testPlayerButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  // Last section style
   lastSection: {
     marginBottom: spacing.xxxl,
   },

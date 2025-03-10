@@ -32,7 +32,7 @@ const CommunityScreen: React.FC = () => {
       listeners: 42, 
       isLive: true,
       genre: 'Lo-Fi',
-      color: '#4A90E2' // Blue
+      color: theme.colors.primary // Use theme color instead of hardcoded
     },
     { 
       id: '2', 
@@ -41,7 +41,7 @@ const CommunityScreen: React.FC = () => {
       listeners: 28, 
       isLive: true,
       genre: 'Hip-Hop',
-      color: '#E74C3C' // Red
+      color: theme.colors.primary // Use theme color instead of hardcoded
     },
     { 
       id: '3', 
@@ -50,7 +50,7 @@ const CommunityScreen: React.FC = () => {
       listeners: 15, 
       isLive: true,
       genre: 'Alternative',
-      color: '#27AE60' // Green
+      color: theme.colors.primary // Use theme color instead of hardcoded
     },
   ];
 
@@ -62,7 +62,7 @@ const CommunityScreen: React.FC = () => {
       description: 'Vote for your favorite tracks of the week', 
       participants: 146,
       daysLeft: 3,
-      color: '#8E44AD' // Purple
+      color: theme.colors.primary // Use theme color instead of hardcoded
     },
     { 
       id: '2', 
@@ -70,7 +70,7 @@ const CommunityScreen: React.FC = () => {
       description: 'How well do you know your music?', 
       participants: 78,
       daysLeft: 5,
-      color: '#F39C12' // Orange
+      color: theme.colors.primary // Use theme color instead of hardcoded
     },
   ];
 
@@ -122,54 +122,59 @@ const CommunityScreen: React.FC = () => {
       style={styles.roomCardContainer}
     >
       <Card style={styles.roomCard}>
-        <View style={[styles.roomCoverContainer, { backgroundColor: item.color }]}>
-          <MaterialCommunityIcons name="music-note-eighth" size={40} color="rgba(255,255,255,0.8)" />
+        <View style={[styles.roomCoverContainer, { 
+          backgroundColor: isDarkMode ? theme.colors.card : theme.colors.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.divider,
+        }]}>
+          <MaterialCommunityIcons 
+            name="music-note-eighth" 
+            size={40} 
+            color={theme.colors.primary} 
+          />
         </View>
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.roomGradient}
-        >
-          <View style={styles.roomContent}>
-            <View style={styles.roomHeader}>
-              <Text style={styles.roomName}>
-                {item.name}
-              </Text>
-              {item.isLive && (
-                <View style={[styles.liveBadge, { backgroundColor: theme.colors.primary }]}>
-                  <Text style={styles.liveText}>LIVE</Text>
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.roomInfo}>
-              <View style={styles.hostInfo}>
-                <FontAwesome5 name="user-alt" size={12} color="white" style={{marginRight: 5}} />
-                <Text style={styles.hostName}>
-                  {item.host}
-                </Text>
+        <View style={[styles.roomContent, { 
+          backgroundColor: isDarkMode ? theme.colors.card : theme.colors.background 
+        }]}>
+          <View style={styles.roomHeader}>
+            <Text style={[styles.roomName, { color: theme.colors.text.primary }]}>
+              {item.name}
+            </Text>
+            {item.isLive && (
+              <View style={[styles.liveBadge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={styles.liveText}>LIVE</Text>
               </View>
-              <View style={styles.listenerInfo}>
-                <Ionicons name="headset" size={14} color="white" style={{marginRight: 5}} />
-                <Text style={styles.listenerCount}>
-                  {item.listeners}
-                </Text>
-              </View>
-              <View style={styles.genreInfo}>
-                <MaterialCommunityIcons name="music-note" size={14} color="white" style={{marginRight: 5}} />
-                <Text style={styles.genre}>
-                  {item.genre}
-                </Text>
-              </View>
-            </View>
-            
-            <TouchableOpacity 
-              style={[styles.joinButton, { backgroundColor: theme.colors.primary }]}
-              onPress={() => navigateToRoom(item.id)}
-            >
-              <Text style={styles.joinButtonText}>Join Room</Text>
-            </TouchableOpacity>
+            )}
           </View>
-        </LinearGradient>
+          
+          <View style={styles.roomInfo}>
+            <View style={styles.hostInfo}>
+              <FontAwesome5 name="user-alt" size={12} color={theme.colors.text.secondary} style={{marginRight: 5}} />
+              <Text style={[styles.hostName, { color: theme.colors.text.secondary }]}>
+                {item.host}
+              </Text>
+            </View>
+            <View style={styles.listenerInfo}>
+              <Ionicons name="headset" size={14} color={theme.colors.text.secondary} style={{marginRight: 5}} />
+              <Text style={[styles.listenerCount, { color: theme.colors.text.secondary }]}>
+                {item.listeners}
+              </Text>
+            </View>
+            <View style={styles.genreInfo}>
+              <MaterialCommunityIcons name="music-note" size={14} color={theme.colors.text.secondary} style={{marginRight: 5}} />
+              <Text style={[styles.genre, { color: theme.colors.text.secondary }]}>
+                {item.genre}
+              </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.joinButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => navigateToRoom(item.id)}
+          >
+            <Text style={styles.joinButtonText}>Join Room</Text>
+          </TouchableOpacity>
+        </View>
       </Card>
     </TouchableOpacity>
   );
@@ -178,10 +183,16 @@ const CommunityScreen: React.FC = () => {
   const renderChallenge = ({ item }: { item: typeof musicChallenges[0] }) => (
     <TouchableOpacity key={item.id} activeOpacity={0.7}>
       <Card style={styles.challengeCard}>
-        <View style={[styles.challengeCoverContainer, { backgroundColor: item.color }]}>
-          <Ionicons name="trophy" size={36} color="rgba(255,255,255,0.8)" />
+        <View style={[styles.challengeCoverContainer, { 
+          backgroundColor: isDarkMode ? theme.colors.card : theme.colors.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.divider,
+        }]}>
+          <Ionicons name="trophy" size={36} color={theme.colors.primary} />
         </View>
-        <View style={styles.challengeContent}>
+        <View style={[styles.challengeContent, {
+          backgroundColor: isDarkMode ? theme.colors.card : theme.colors.background
+        }]}>
           <Text style={[styles.challengeTitle, { color: theme.colors.text.primary }]}>
             {item.title}
           </Text>
@@ -204,9 +215,7 @@ const CommunityScreen: React.FC = () => {
               </View>
             </View>
             <TouchableOpacity 
-              style={[styles.participateButton, { 
-                backgroundColor: theme.colors.primary 
-              }]}
+              style={[styles.participateButton, { backgroundColor: theme.colors.primary }]}
             >
               <Text style={styles.participateButtonText}>
                 Participate
@@ -220,6 +229,13 @@ const CommunityScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
+          Community
+        </Text>
+      </View>
+
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
@@ -232,48 +248,48 @@ const CommunityScreen: React.FC = () => {
           />
         }
       >
-        {/* Header with stats */}
-        <View style={styles.header}>
-          <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
-              Community
+        {/* Community Stats Cards */}
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, { 
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+            borderWidth: 1,
+            borderColor: theme.colors.divider,
+          }]}>
+            <Ionicons name="people" size={18} color={theme.colors.text.secondary} />
+            <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
+              {communityStats.activeMembersToday}
             </Text>
-            <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>
-              Connect with music lovers
+            <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
+              Active Today
             </Text>
           </View>
           
-          {/* Community Stats Cards */}
-          <View style={styles.statsContainer}>
-            <View style={[styles.statCard, { backgroundColor: isDarkMode ? theme.colors.card + '80' : theme.colors.card }]}>
-              <Ionicons name="people" size={20} color={theme.colors.primary} />
-              <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
-                {communityStats.activeMembersToday}
-              </Text>
-              <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
-                Active Today
-              </Text>
-            </View>
-            
-            <View style={[styles.statCard, { backgroundColor: isDarkMode ? theme.colors.card + '80' : theme.colors.card }]}>
-              <Ionicons name="headset" size={20} color={theme.colors.primary} />
-              <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
-                {communityStats.totalListeningRooms}
-              </Text>
-              <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
-                Rooms
-              </Text>
-            </View>
-            
-            <View style={[styles.statCard, { backgroundColor: isDarkMode ? theme.colors.card + '80' : theme.colors.card }]}>
-              <Ionicons name="trophy" size={20} color={theme.colors.primary} />
-              <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
-                {communityStats.activeChallenges}
-              </Text>
-              <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
-                Challenges
-              </Text>
-            </View>
+          <View style={[styles.statCard, { 
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+            borderWidth: 1,
+            borderColor: theme.colors.divider,
+          }]}>
+            <Ionicons name="headset" size={18} color={theme.colors.text.secondary} />
+            <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
+              {communityStats.totalListeningRooms}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
+              Rooms
+            </Text>
+          </View>
+          
+          <View style={[styles.statCard, { 
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+            borderWidth: 1,
+            borderColor: theme.colors.divider,
+          }]}>
+            <Ionicons name="trophy" size={18} color={theme.colors.text.secondary} />
+            <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
+              {communityStats.activeChallenges}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.colors.text.secondary }]}>
+              Challenges
+            </Text>
           </View>
         </View>
 
@@ -346,44 +362,40 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
   },
   header: {
-    padding: spacing.base,
-  },
-  headerTitleContainer: {
-    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    marginTop: 2,
+    flex: 1,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.base,
+    marginTop: spacing.md,
+    marginBottom: spacing.base,
+    paddingHorizontal: spacing.base,
   },
   statCard: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     marginHorizontal: spacing.xxs,
     borderRadius: borderRadius.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1.5,
-    elevation: 2,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 6,
   },
   statLabel: {
     fontSize: 12,
+    marginTop: 2,
   },
   createRoomButton: {
     marginHorizontal: spacing.base,
@@ -418,21 +430,13 @@ const styles = StyleSheet.create({
     padding: 0,
     overflow: 'hidden',
     borderRadius: borderRadius.lg,
+    backgroundColor: 'transparent',
   },
   roomCoverContainer: {
     width: '100%',
-    height: 160,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  roomGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '100%',
-    justifyContent: 'flex-end',
-    borderRadius: borderRadius.lg,
   },
   roomContent: {
     padding: spacing.base,
@@ -444,9 +448,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   roomName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
     flex: 1,
   },
   liveBadge: {
@@ -457,7 +460,7 @@ const styles = StyleSheet.create({
   liveText: {
     color: 'white',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   roomInfo: {
     flexDirection: 'row',
@@ -469,24 +472,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   hostName: {
-    fontSize: 14,
-    color: 'white',
+    fontSize: 13,
   },
   listenerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   listenerCount: {
-    fontSize: 14,
-    color: 'white',
+    fontSize: 13,
   },
   genreInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   genre: {
-    fontSize: 14,
-    color: 'white',
+    fontSize: 13,
   },
   joinButton: {
     paddingVertical: spacing.sm,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   },
   joinButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontWeight: '600',
     fontSize: 14,
   },
   challengeCard: {
@@ -503,10 +503,11 @@ const styles = StyleSheet.create({
     padding: 0,
     overflow: 'hidden',
     borderRadius: borderRadius.lg,
+    backgroundColor: 'transparent',
   },
   challengeCoverContainer: {
     width: '100%',
-    height: 120,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -514,12 +515,12 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   challengeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     marginBottom: spacing.xs,
   },
   challengeDescription: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: spacing.base,
   },
   challengeFooter: {

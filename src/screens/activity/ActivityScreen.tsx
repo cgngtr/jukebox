@@ -16,7 +16,7 @@ const ACTIVITY_TYPES = {
 
 // Main ActivityScreen component
 const ActivityScreen: React.FC = () => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
 
   // Mock data for activities
   const activities = [
@@ -119,17 +119,23 @@ const ActivityScreen: React.FC = () => {
         {/* Activity Filters */}
         <View style={styles.filters}>
           <TouchableOpacity 
-            style={[styles.filterButton, { backgroundColor: theme.colors.primary }]}
+            style={[
+              styles.filterButton,
+              { backgroundColor: theme.colors.primary }
+            ]}
           >
-            <Text style={styles.filterButtonText}>All</Text>
+            <Text style={[styles.filterButtonText, { color: 'white' }]}>
+              All
+            </Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.filterButton, { 
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.divider,
-              borderWidth: 1
-            }]}
+            style={[
+              styles.filterButton, 
+              { 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+              }
+            ]}
           >
             <Text style={[styles.filterButtonText, { color: theme.colors.text.primary }]}>
               You
@@ -137,11 +143,12 @@ const ActivityScreen: React.FC = () => {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.filterButton, { 
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.divider,
-              borderWidth: 1
-            }]}
+            style={[
+              styles.filterButton, 
+              { 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+              }
+            ]}
           >
             <Text style={[styles.filterButtonText, { color: theme.colors.text.primary }]}>
               Friends
@@ -149,11 +156,12 @@ const ActivityScreen: React.FC = () => {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.filterButton, { 
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.divider,
-              borderWidth: 1
-            }]}
+            style={[
+              styles.filterButton, 
+              { 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+              }
+            ]}
           >
             <Text style={[styles.filterButtonText, { color: theme.colors.text.primary }]}>
               Mentions
@@ -196,15 +204,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   filterButton: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 20,
     marginRight: spacing.sm,
+    minWidth: 20,
+    alignItems: 'center',
   },
   filterButtonText: {
-    color: 'white',
-    fontWeight: '600',
     fontSize: 14,
+    fontWeight: '600',
   },
   activitiesContainer: {
     padding: spacing.base,
