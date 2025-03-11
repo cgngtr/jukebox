@@ -43,7 +43,7 @@ interface UserProfile {
 }
 
 type ProfileParams = {
-  userId: string;
+  userId?: string;  // Make userId optional
 };
 
 type RootStackParamList = {
@@ -111,6 +111,8 @@ const styles = StyleSheet.create<{
   tabText: TextStyle;
   tabCount: TextStyle;
   playlistsWrapper: ViewStyle;
+  loadMoreButton: ViewStyle;
+  loadMoreButtonText: TextStyle;
 }>({
   container: {
     flex: 1,
@@ -404,6 +406,22 @@ const styles = StyleSheet.create<{
   playlistsWrapper: {
     paddingTop: spacing.sm,
   },
+  loadMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+    borderRadius: borderRadius.pill,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.base,
+    alignSelf: 'center',
+  },
+  loadMoreButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: spacing.xs,
+  },
 });
 
 const ProfileScreen: React.FC = () => {
@@ -411,7 +429,9 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, getToken, isAuthenticated } = useAuth();
   const route = useRoute<ProfileRouteProp>();
-  const { userId } = route.params;
+  
+  // Get userId from params or fallback to current user
+  const userId = route.params?.userId || user?.id;
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [recentPlaylists, setRecentPlaylists] = useState<SpotifyPlaylist[]>([]);
@@ -419,6 +439,10 @@ const ProfileScreen: React.FC = () => {
   const [savedTracks, setSavedTracks] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedPlaylistTab, setSelectedPlaylistTab] = useState<'owned' | 'followed'>('owned');
+  
+  // Add state variables to track visible playlists count
+  const [visibleOwnedPlaylists, setVisibleOwnedPlaylists] = useState<number>(5);
+  const [visibleFollowedPlaylists, setVisibleFollowedPlaylists] = useState<number>(5);
   
   // Fetch data on component mount
   useEffect(() => {
@@ -878,6 +902,15 @@ const ProfileScreen: React.FC = () => {
     });
   };
 
+  // Add functions to handle loading more playlists
+  const loadMoreOwnedPlaylists = () => {
+    setVisibleOwnedPlaylists(prev => prev + 5);
+  };
+  
+  const loadMoreFollowedPlaylists = () => {
+    setVisibleFollowedPlaylists(prev => prev + 5);
+  };
+
   // Show loading indicator while fetching data
   if (isLoading) {
     return (
@@ -1174,19 +1207,41 @@ const ProfileScreen: React.FC = () => {
                 {selectedPlaylistTab === 'owned' ? (
                   // Owned Playlists
                   recentPlaylists && recentPlaylists.length > 0 ? (
-                    <FlatList
-                      data={recentPlaylists
-                        .filter(playlist => 
-                          playlist != null && 
-                          (playlist.owner?.id === user?.id || !playlist.owner?.id)
-                        )
-                        .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
-                      }
-                      renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
-                      keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
-                      scrollEnabled={false}
-                      contentContainerStyle={styles.playlistsContent}
-                    />
+                    <>
+                      <FlatList
+                        data={recentPlaylists
+                          .filter(playlist => 
+                            playlist != null && 
+                            (playlist.owner?.id === user?.id || !playlist.owner?.id)
+                          )
+                          .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
+                          .slice(0, visibleOwnedPlaylists) // Limit visible playlists
+                        }
+                        renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
+                        keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
+                        scrollEnabled={false}
+                        contentContainerStyle={styles.playlistsContent}
+                      />
+                      
+                      {/* Load More button - only show if there are more playlists to load */}
+                      {recentPlaylists.filter(playlist => 
+                        playlist != null && 
+                        (playlist.owner?.id === user?.id || !playlist.owner?.id)
+                      ).length > visibleOwnedPlaylists && (
+                        <TouchableOpacity 
+                          style={[
+                            styles.loadMoreButton,
+                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                          ]}
+                          onPress={loadMoreOwnedPlaylists}
+                        >
+                          <Text style={[styles.loadMoreButtonText, { color: theme.colors.primary }]}>
+                            Load More
+                          </Text>
+                          <Ionicons name="chevron-down" size={16} color={theme.colors.primary} />
+                        </TouchableOpacity>
+                      )}
+                    </>
                   ) : (
                     <Text style={[styles.noContentText, { color: theme.colors.text.secondary, padding: spacing.base }]}>
                       You don't have any playlists yet
@@ -1195,20 +1250,43 @@ const ProfileScreen: React.FC = () => {
                 ) : (
                   // Followed Playlists
                   recentPlaylists && recentPlaylists.length > 0 ? (
-                    <FlatList
-                      data={recentPlaylists
-                        .filter(playlist => 
-                          playlist != null && 
-                          playlist.owner?.id !== undefined && 
-                          playlist.owner?.id !== user?.id
-                        )
-                        .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
-                      }
-                      renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
-                      keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
-                      scrollEnabled={false}
-                      contentContainerStyle={styles.playlistsContent}
-                    />
+                    <>
+                      <FlatList
+                        data={recentPlaylists
+                          .filter(playlist => 
+                            playlist != null && 
+                            playlist.owner?.id !== undefined && 
+                            playlist.owner?.id !== user?.id
+                          )
+                          .sort((a, b) => (b.followers?.total || 0) - (a.followers?.total || 0)) // Sort by followers count (highest first)
+                          .slice(0, visibleFollowedPlaylists) // Limit visible playlists
+                        }
+                        renderItem={({ item }) => item ? renderPlaylistItem({ item }) : null}
+                        keyExtractor={(item, index) => (item && item.id) ? item.id : `playlist-${index}`}
+                        scrollEnabled={false}
+                        contentContainerStyle={styles.playlistsContent}
+                      />
+                      
+                      {/* Load More button - only show if there are more playlists to load */}
+                      {recentPlaylists.filter(playlist => 
+                        playlist != null && 
+                        playlist.owner?.id !== undefined && 
+                        playlist.owner?.id !== user?.id
+                      ).length > visibleFollowedPlaylists && (
+                        <TouchableOpacity 
+                          style={[
+                            styles.loadMoreButton,
+                            { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                          ]}
+                          onPress={loadMoreFollowedPlaylists}
+                        >
+                          <Text style={[styles.loadMoreButtonText, { color: theme.colors.primary }]}>
+                            Load More
+                          </Text>
+                          <Ionicons name="chevron-down" size={16} color={theme.colors.primary} />
+                        </TouchableOpacity>
+                      )}
+                    </>
                   ) : (
                     <Text style={[styles.noContentText, { color: theme.colors.text.secondary, padding: spacing.base }]}>
                       You're not following any playlists yet

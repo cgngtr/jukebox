@@ -71,7 +71,7 @@ export type AppStackParamList = {
     reviewId: string;
     showComments?: boolean;
   };
-  Profile: { userId: string };
+  Profile: { userId?: string };
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
