@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -51,21 +51,37 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   const [customTag, setCustomTag] = useState('');
   const [errors, setErrors] = useState<{ rating?: string; content?: string }>({});
   
-  // Bir referans kullanarak ilk yüklemeyi takip edelim
-  const initialLoadRef = useRef(true);
+  // Bir referans kullanarak form durumunu kontrol edelim
+  const isInitializedRef = useRef(false);
+  const contentInputRef = useRef<TextInput>(null);
 
-  // Reset form if initialValues change
+  // Form başlangıç değerlerini ayarla
   useEffect(() => {
-    // İlk render'da bu etkiyi çalıştırma, sadece props değiştiğinde çalıştır
-    if (initialLoadRef.current) {
-      initialLoadRef.current = false;
-      return;
+    if (!isInitializedRef.current) {
+      setRating(initialRating);
+      setContent(initialContent);
+      setTags([...initialTags]); // Yeni bir dizi oluştur
+      isInitializedRef.current = true;
     }
-    
-    setRating(initialRating);
-    setContent(initialContent);
-    setTags(initialTags);
   }, [initialRating, initialContent, initialTags]);
+
+  // Rating değişikliğini işle
+  const handleRatingChange = useCallback((newRating: number) => {
+    setRating(newRating);
+    // Rating seçildiğinde hata mesajını temizle
+    if (newRating > 0 && errors.rating) {
+      setErrors(prev => ({ ...prev, rating: undefined }));
+    }
+  }, [errors.rating]);
+
+  // İçerik değişikliğini işle
+  const handleContentChange = useCallback((text: string) => {
+    setContent(text);
+    // İçerik girildiğinde hata mesajını temizle
+    if (text.trim().length >= 5 && errors.content) {
+      setErrors(prev => ({ ...prev, content: undefined }));
+    }
+  }, [errors.content]);
 
   // Validate form
   const validateForm = (): boolean => {
@@ -94,48 +110,52 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
           content: content.trim(),
           tags,
         });
+        // Başarıyla gönderildikten sonra formu temizle
+        if (!isEditing) {
+          setRating(0);
+          setContent('');
+          setTags([]);
+          setCustomTag('');
+        }
       } catch (error) {
         Alert.alert(
           'Error',
           'There was a problem submitting your review. Please try again.',
-          [{ text: 'OK' }]
         );
       }
     }
   };
 
-  // Handle tag toggle
+  // Toggle tag selection
   const toggleTag = (tagName: string) => {
-    setTags(prevTags => 
-      prevTags.includes(tagName)
-        ? prevTags.filter(t => t !== tagName)
-        : [...prevTags, tagName]
-    );
+    setTags(prevTags => {
+      if (prevTags.includes(tagName)) {
+        return prevTags.filter(tag => tag !== tagName);
+      } else {
+        return [...prevTags, tagName];
+      }
+    });
   };
 
   // Add custom tag
   const addCustomTag = () => {
-    const trimmedTag = customTag.trim().toLowerCase();
+    const trimmedTag = customTag.trim();
     
-    if (!trimmedTag) return;
-    
-    if (trimmedTag.length < 2) {
-      Alert.alert('Invalid Tag', 'Tag must be at least 2 characters long');
+    if (!trimmedTag) {
       return;
     }
     
     if (trimmedTag.length > 20) {
-      Alert.alert('Invalid Tag', 'Tag must be no more than 20 characters long');
+      Alert.alert('Error', 'Tag must be less than 20 characters');
       return;
     }
     
-    if (tags.includes(trimmedTag)) {
-      Alert.alert('Duplicate Tag', 'This tag is already added');
-      return;
+    if (!tags.includes(trimmedTag)) {
+      setTags(prevTags => [...prevTags, trimmedTag]);
+      setCustomTag('');
+    } else {
+      Alert.alert('Already Added', 'This tag is already in your review');
     }
-    
-    setTags(prevTags => [...prevTags, trimmedTag]);
-    setCustomTag('');
   };
 
   // Render available tags section
@@ -216,7 +236,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
                 rating={rating}
                 editable={true}
                 size={36}
-                onRatingChange={setRating}
+                onRatingChange={handleRatingChange}
               />
             </View>
             {errors.rating && <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.rating}</Text>}
@@ -240,9 +260,10 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
               placeholder="Share your thoughts about this music..."
               placeholderTextColor={theme.colors.text.inactive}
               value={content}
-              onChangeText={setContent}
+              onChangeText={handleContentChange}
               textAlignVertical="top"
               maxLength={1000}
+              ref={contentInputRef}
             />
             <Text style={[styles.characterCount, { color: theme.colors.text.secondary }]}>
               {content.length}/1000 characters

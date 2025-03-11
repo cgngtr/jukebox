@@ -6,19 +6,22 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  ScrollView
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../api/supabase';
 
-import { ReviewForm } from '../../components/reviews';
-import { createReview } from '../../api/reviews';
+import { ReviewForm } from '../../components/reviews/ReviewForm';
+import { createReview, UserBase } from '../../api/reviews';
 import { User } from '@supabase/supabase-js';
 import { AppStackParamList } from '../../navigation/AppNavigator';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, borderRadius } from '../../styles';
+import { useAuth } from '../../context/AuthContext';
+import { SpotifyUser } from '../../services/musicApi';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -36,6 +39,7 @@ export const CreateReviewScreen: React.FC = () => {
   const route = useRoute<CreateReviewRouteProp>();
   const { itemId, itemType, itemName, itemImage } = route.params;
   const { theme } = useTheme();
+  const { user: authUser, getToken } = useAuth();
   
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +54,22 @@ export const CreateReviewScreen: React.FC = () => {
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
+        
+        // Check and log auth status
+        if (!user) {
+          console.error('No authenticated user found in CreateReviewScreen');
+          
+          // Try to get the session
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) {
+            console.error('Session error:', sessionError);
+          } else {
+            console.log('Session data:', sessionData ? 'exists' : 'does not exist');
+          }
+        } else {
+          console.log('Successfully retrieved authenticated user:', user.id);
+        }
+        
         setUser(user);
         
         // Get common tags for this item type
@@ -79,7 +99,33 @@ export const CreateReviewScreen: React.FC = () => {
   
   // Handle the review submission
   const handleSubmit = async (formData: { rating: number; content: string; tags: string[] }) => {
-    if (!user) {
+    // İlk kontrol - uygun bir kullanıcı objesi oluştur
+    let currentUser: UserBase | null = null;
+    
+    if (user) {
+      currentUser = { id: user.id };
+    } else if (authUser) {
+      currentUser = { id: authUser.id };
+    }
+    
+    if (!currentUser) {
+      console.error('No user found for review submission');
+      
+      // Check auth status and log for debugging
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Current session status:', session ? 'active' : 'no active session');
+        
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        console.log('Fresh user check:', freshUser ? `Found user ${freshUser.id}` : 'No user found');
+        
+        // Try to get a token
+        const token = await getToken();
+        console.log('Token available:', token ? 'yes' : 'no');
+      } catch (authError) {
+        console.error('Auth check error:', authError);
+      }
+      
       Alert.alert(
         'Authentication Required',
         'Please log in to submit a review.',
@@ -91,8 +137,23 @@ export const CreateReviewScreen: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('Submitting review:', { 
+        user: currentUser.id, 
+        itemId, 
+        itemType, 
+        rating: formData.rating,
+        contentLength: formData.content.length,
+        tagsCount: formData.tags.length
+      });
+      
+      // Kimlik doğrulama tekrar kontrol ediliyor ve token yenileniyor
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Failed to get authentication token');
+      }
+      
       const result = await createReview(
-        user,
+        currentUser,
         itemId,
         itemType,
         formData.rating,
@@ -100,26 +161,46 @@ export const CreateReviewScreen: React.FC = () => {
         formData.tags
       );
       
-      if (result) {
-        // Success! Go back to the previous screen
-        Alert.alert(
-          'Review Submitted',
-          'Your review has been successfully posted.',
-          [
-            { 
-              text: 'OK', 
-              onPress: () => navigation.goBack()
-            }
-          ]
-        );
-      } else {
-        throw new Error('Failed to create review');
-      }
+      console.log('Review created successfully:', result?.id);
+      
+      Alert.alert(
+        'Success',
+        'Your review has been submitted successfully!',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Navigate back to previous screen
+              navigation.goBack();
+            } 
+          }
+        ]
+      );
     } catch (error) {
-      console.error('Error creating review:', error);
+      console.error('Error submitting review:', error);
+      
+      // Daha detaylı hata mesajı
+      let errorMessage = 'There was a problem submitting your review.';
+      
+      if (error instanceof Error) {
+        console.log('Error type:', error.name, 'Message:', error.message);
+        
+        // RLS hatası için özel mesaj
+        if (error.message.includes('row-level security policy') || 
+            error.message.includes('42501') ||
+            error.message.includes('permission denied')) {
+          errorMessage = 'Authentication issue: Please try logging out and back in. If the problem persists, contact support with reference to "RLS policy" error.';
+        } else if (error.message.includes('not found in database') || 
+                 error.message.includes('user data not found')) {
+          errorMessage = 'Your user profile could not be found. Please try logging out and back in.';
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       Alert.alert(
         'Error',
-        'There was a problem posting your review. Please try again.',
+        errorMessage,
         [{ text: 'OK' }]
       );
     } finally {

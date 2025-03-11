@@ -12,7 +12,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Alert
+  Alert,
+  Animated,
+  Keyboard
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,10 +27,14 @@ import {
   getReviewById,
   getReviewComments,
   addReviewComment,
-  addReviewReaction
+  addReviewReaction,
+  UserBase
 } from '../../api/reviews';
 import { RatingStars } from '../../components/reviews';
 import { AppStackParamList } from '../../navigation/AppNavigator';
+import { useAuth } from '../../context/AuthContext';
+import { User } from '@supabase/supabase-js';
+import { useTheme } from '../../context/ThemeContext';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -53,6 +59,8 @@ export const ReviewDetailScreen: React.FC = () => {
   
   // Yeni state: Yorum görünümü için (true) veya genel inceleme için (false)
   const [isCommentsView, setIsCommentsView] = useState(false);
+
+  const { user: authUser } = useAuth();
 
   // Fetch the review details
   useEffect(() => {
@@ -139,7 +147,17 @@ export const ReviewDetailScreen: React.FC = () => {
   // Handle comment submission
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
-    if (!user) {
+    
+    // Kullanıcı kontrolü
+    let currentUser: UserBase | null = null;
+    
+    if (user) {
+      currentUser = { id: user.id };
+    } else if (authUser) {
+      currentUser = { id: authUser.id };
+    }
+    
+    if (!currentUser) {
       Alert.alert(
         'Authentication Required',
         'Please log in to comment on reviews.',
@@ -152,24 +170,24 @@ export const ReviewDetailScreen: React.FC = () => {
     
     try {
       const newComment = await addReviewComment(
-        user,
+        currentUser,
         reviewId,
         commentText.trim()
       );
       
       if (newComment) {
-        // Add user data to the new comment for display
-        const commentWithUser = {
+        // Add the new comment to the list
+        const formattedComment = {
           ...newComment,
           user: {
-            id: user.id,
-            username: user.user_metadata?.username || 'User',
-            avatar_url: user.user_metadata?.avatar_url,
+            id: currentUser.id,
+            username: user?.user_metadata?.username || authUser?.display_name || 'User',
+            avatar_url: user?.user_metadata?.avatar_url || authUser?.avatar_url,
           }
         };
         
         // Add to comments list and clear input
-        setComments(prev => [commentWithUser, ...prev]);
+        setComments(prev => [formattedComment, ...prev]);
         setCommentText('');
         
         // Update review comment count

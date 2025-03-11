@@ -647,6 +647,11 @@ export interface SpotifyUser {
   uri: string;
 }
 
+// Uygulama için genişletilmiş kullanıcı tipi
+export interface AppUser extends SpotifyUser {
+  avatar_url?: string; // Uyumluluk için eklendi
+}
+
 export interface SpotifyArtist {
   id: string;
   name: string;

@@ -2,15 +2,15 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { auth } from '../api';
-import { SpotifyUser } from '../services/musicApi';
+import { SpotifyUser, AppUser } from '../services/musicApi';
 
 // Auth context tip tanımlaması
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: SpotifyUser | null;
+  user: AppUser | null;
   login: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   handleAuthRedirect: (url: string) => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   user: null,
   login: async () => {},
-  logout: async () => {},
+  logout: async () => false,
   handleAuthRedirect: async () => {},
   getToken: async () => null,
 });
@@ -38,7 +38,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<SpotifyUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
 
   // Uygulama başlangıcında oturum durumunu kontrol et
   useEffect(() => {
@@ -105,36 +105,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Auth yönlendirmesini işle
+  // Yetkilendirme yönlendirmesini işle
   const handleAuthRedirect = async (url: string) => {
     try {
       console.log('handleAuthRedirect başlatılıyor...');
       setIsLoading(true);
       
-      // URL'den code parametresini çıkar
-      const code = new URL(url).searchParams.get('code');
+      // URL'den code parametresini al
+      const matches = url.match(/code=([^&]*)/);
+      const authCode = matches?.[1];
       
-      if (!code) {
-        console.log('URL\'de code parametresi bulunamadı');
-        throw new Error('No code parameter found in the redirect URL');
+      if (!authCode) {
+        console.error('Auth code not found in redirect URL');
+        throw new Error('Auth code not found in redirect URL');
       }
       
       console.log('Code parametresi alındı, token talep ediliyor...');
-      // Code ile token al
-      await auth.getAccessToken(code);
       
-      console.log('Access token alındı, kullanıcı bilgileri getiriliyor...');
-      // Kullanıcı bilgilerini getir
-      const userInfo = await auth.getCurrentUser();
-      console.log('Kullanıcı bilgileri alındı:', userInfo.display_name);
-      
-      setUser(userInfo);
-      setIsAuthenticated(true);
-      console.log('Kimlik doğrulama tamamlandı, isAuthenticated=true olarak ayarlandı');
+      try {
+        // Token almak için API çağrısı
+        const tokenData = await auth.getAccessToken(authCode);
+        
+        if (!tokenData) {
+          throw new Error('Failed to get token from Spotify');
+        }
+        
+        // Supabase oturumunu kontrol et
+        const supabaseSession = await auth.getSupabaseSession();
+        console.log('Supabase session check:', supabaseSession ? 'Active' : 'None');
+        
+        // Kullanıcı bilgilerini al
+        const userInfo = await auth.getCurrentUser();
+        setUser(userInfo);
+        setIsAuthenticated(true);
+        
+        console.log('handleAuthRedirect tamamlandı. isAuthenticated: true');
+      } catch (error) {
+        console.error('Error handling auth redirect:', error);
+        
+        // Token alma başarısız oldu, ancak Spotify oturumu açılabildi
+        // En azından mevcut oturumu kullanabiliriz
+        const userInfo = await auth.getCurrentUser();
+        
+        if (userInfo) {
+          console.log('Spotify authentication succeeded despite errors');
+          setUser(userInfo);
+          setIsAuthenticated(true);
+          console.log('handleAuthRedirect tamamlandı. isAuthenticated: true (fallback)');
+        } else {
+          // Kimlik doğrulama tamamen başarısız
+          setUser(null);
+          setIsAuthenticated(false);
+          console.log('handleAuthRedirect tamamlandı. isAuthenticated: false');
+          throw error;
+        }
+      }
     } catch (error) {
       console.error('Error handling auth redirect:', error);
       setUser(null);
       setIsAuthenticated(false);
+      console.log('handleAuthRedirect tamamlandı. isAuthenticated: false');
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -143,12 +174,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Oturumu kapat
   const logout = async () => {
     try {
+      console.log('AuthContext: Logout işlemi başlatılıyor...');
       setIsLoading(true);
+      
+      // AsyncStorage'dan token bilgilerini sil
       await auth.logout();
+      console.log('AuthContext: AsyncStorage temizlendi');
+      
+      // User ve authentication durumunu güncelle
       setUser(null);
       setIsAuthenticated(false);
+      console.log('AuthContext: Kullanıcı durumu güncellendi, isAuthenticated=false');
+      
+      return true; // Logout işlemi başarılı
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('AuthContext: Logout sırasında hata:', error);
+      return false; // Logout işlemi başarısız
     } finally {
       setIsLoading(false);
     }

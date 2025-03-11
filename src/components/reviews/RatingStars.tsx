@@ -25,11 +25,10 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   onRatingChange,
 }) => {
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
+  
+  // Use hoveredRating if available, otherwise use the actual rating
   const displayRating = hoveredRating !== null ? hoveredRating : rating;
-
-  // Generate array of stars based on maxRating
-  const stars = Array.from({ length: maxRating }, (_, index) => index + 1);
-
+  
   // Handle star press
   const handlePress = (selectedRating: number) => {
     if (editable && onRatingChange) {
@@ -39,43 +38,39 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
     }
   };
 
+  // Generate stars based on maxRating
+  const renderStars = () => {
+    const stars = [];
+    
+    for (let i = 1; i <= maxRating; i++) {
+      const filled = i <= displayRating;
+      
+      stars.push(
+        <TouchableOpacity
+          key={i}
+          activeOpacity={editable ? 0.7 : 1}
+          disabled={!editable}
+          onPress={() => handlePress(i)}
+          onPressIn={() => editable && setHoveredRating(i)}
+          onPressOut={() => editable && setHoveredRating(null)}
+          style={styles.starButton}
+        >
+          <Ionicons
+            name={filled ? 'star' : 'star-outline'}
+            size={size}
+            color={filled ? activeColor : inactiveColor}
+            style={styles.star}
+          />
+        </TouchableOpacity>
+      );
+    }
+    
+    return stars;
+  };
+
   return (
     <View style={styles.container}>
-      {stars.map((star) => {
-        // Determine if star should be filled or not
-        const filled = star <= displayRating;
-        
-        // Create animated style for hover effect
-        const animatedStyle = useAnimatedStyle(() => {
-          return {
-            transform: [
-              { 
-                scale: withTiming(filled ? 1.1 : 1, { 
-                  duration: 150 
-                }) 
-              }
-            ],
-          };
-        });
-
-        return (
-          <TouchableOpacity
-            key={star}
-            activeOpacity={editable ? 0.7 : 1}
-            disabled={!editable}
-            onPress={() => handlePress(star)}
-            onPressIn={() => editable && setHoveredRating(star)}
-            onPressOut={() => editable && setHoveredRating(null)}
-          >
-            <AnimatedIcon
-              name={filled ? 'star' : 'star-outline'}
-              size={size}
-              color={filled ? activeColor : inactiveColor}
-              style={[styles.star, animatedStyle]}
-            />
-          </TouchableOpacity>
-        );
-      })}
+      {renderStars()}
     </View>
   );
 };
@@ -84,6 +79,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  starButton: {
+    padding: 4, // Larger touch area
   },
   star: {
     marginHorizontal: 2,

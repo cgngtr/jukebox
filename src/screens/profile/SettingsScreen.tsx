@@ -35,22 +35,40 @@ const SettingsScreen: React.FC = () => {
             text: 'Sign Out',
             style: 'destructive',
             onPress: async () => {
-              // Perform logout
-              await logout();
-              
-              // Navigate to Auth screen
-              navigation.dispatch(
-                CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: 'Auth' }],
-                })
-              );
+              try {
+                console.log('Logging out user...');
+                // Perform logout
+                const logoutSuccess = await logout();
+                
+                if (logoutSuccess) {
+                  console.log('Logout successful, navigating to Auth screen...');
+                  // Navigate to Auth screen using reset to clear navigation history
+                  navigation.dispatch(
+                    CommonActions.reset({
+                      index: 0,
+                      routes: [{ name: 'Auth' }],
+                    })
+                  );
+                } else {
+                  console.error('Logout returned false, showing error');
+                  Alert.alert(
+                    'Error',
+                    'Failed to sign out. Please try again.'
+                  );
+                }
+              } catch (error) {
+                console.error('Error during logout process:', error);
+                Alert.alert(
+                  'Error',
+                  'Failed to complete sign out process. Please try again.'
+                );
+              }
             }
           }
         ]
       );
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Error showing logout confirmation:', error);
       Alert.alert(
         'Error',
         'An error occurred while signing out. Please try again.'

@@ -79,11 +79,23 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 // App navigation structure
 const AppNavigator: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
-  const { isAuthenticated: authState, isLoading, getToken } = useAuth();
+  const { isAuthenticated, isLoading, getToken } = useAuth();
   
   // İlk durumda Auth ekranını göster, token kontrolünden sonra değişecek
   const [initialRoute, setInitialRoute] = useState<keyof AppStackParamList>('Auth');
   const [hasToken, setHasToken] = useState<boolean>(false);
+
+  // Kimlik doğrulama durumunu takip et
+  useEffect(() => {
+    console.log('Authentication state changed:', isAuthenticated);
+    
+    // Kimlik doğrulama durumu değiştiğinde routeları güncelle
+    if (!isAuthenticated && !isLoading) {
+      console.log('User is not authenticated, setting initialRoute to Auth');
+      setInitialRoute('Auth');
+      setHasToken(false);
+    }
+  }, [isAuthenticated, isLoading]);
   
   // Token varlığını kontrol et
   useEffect(() => {
@@ -128,8 +140,17 @@ const AppNavigator: React.FC = () => {
     return null; // veya bir loading ekranı gösterilebilir
   }
 
+  console.log('Rendering NavigationContainer with initialRoute:', initialRoute);
+
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer 
+      theme={navigationTheme}
+      onStateChange={(state) => {
+        // Navigation state değiştiğinde log
+        console.log('Navigation state changed, current route:', 
+          state?.routes[state.index]?.name);
+      }}
+    >
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
