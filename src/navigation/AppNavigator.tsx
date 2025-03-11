@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer, DefaultTheme, CommonActions } from '@react-navigation/native';
+import React, { useEffect, useState, useRef } from 'react';
+import { NavigationContainer, DefaultTheme, CommonActions, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthNavigator from './AuthNavigator';
 import BottomTabNavigator from './BottomTabNavigator';
@@ -81,6 +81,9 @@ const AppNavigator: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
   const { isAuthenticated, isLoading, getToken } = useAuth();
   
+  // Add navigation reference
+  const navigationRef = useRef<NavigationContainerRef<AppStackParamList>>(null);
+  
   // İlk durumda Auth ekranını göster, token kontrolünden sonra değişecek
   const [initialRoute, setInitialRoute] = useState<keyof AppStackParamList>('Auth');
   const [hasToken, setHasToken] = useState<boolean>(false);
@@ -94,6 +97,17 @@ const AppNavigator: React.FC = () => {
       console.log('User is not authenticated, setting initialRoute to Auth');
       setInitialRoute('Auth');
       setHasToken(false);
+      
+      // Use navigation reset to navigate to Auth screen if navigator is already initialized
+      if (navigationRef.current) {
+        console.log('Resetting navigation to Auth screen');
+        navigationRef.current.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          })
+        );
+      }
     }
   }, [isAuthenticated, isLoading]);
   
@@ -144,6 +158,7 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer 
+      ref={navigationRef}
       theme={navigationTheme}
       onStateChange={(state) => {
         // Navigation state değiştiğinde log
