@@ -15,6 +15,8 @@ import { PlaylistDetailScreen } from '../screens/music/DetailScreens';
 import ArtistAlbumsScreen from '../screens/music/ArtistAlbumsScreen';
 import ListeningRoomScreen from '../screens/community/ListeningRoomScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
+import { CreateReviewScreen, ReviewDetailScreen } from '../screens/music';
+import ProfileScreen from '../screens/profile/ProfileScreen';
 
 // "See All" screens
 import AllNewReleasesScreen from '../screens/music/AllNewReleasesScreen';
@@ -31,8 +33,22 @@ export type AppStackParamList = {
   SpotifyTest: undefined;
   Settings: undefined;
   ArtistDetail: { id: string };
-  AlbumDetail: { id: string };
-  TrackDetail: { id: string };
+  AlbumDetail: { 
+    id: string;
+    albumId?: string; // For backward compatibility
+    albumName?: string;
+    artistName?: string;
+    coverUrl?: string;
+  };
+  TrackDetail: { 
+    id: string; 
+    trackId?: string; // For backward compatibility
+    trackName?: string;
+    artistName?: string;
+    coverUrl?: string;
+    albumId?: string;
+    albumName?: string;
+  };
   Player: undefined;
   PlaylistDetail: { id: string };
   ArtistAlbums: { artistId: string; artistName: string };
@@ -45,6 +61,17 @@ export type AppStackParamList = {
   AllTopArtists: { artists: any[]; title: string };
   AllListeningRooms: { rooms: any[]; title: string };
   AllChallenges: { challenges: any[]; title: string };
+  CreateReview: { 
+    itemId: string;
+    itemType: 'album' | 'track' | 'artist';
+    itemName?: string;
+    itemImage?: string;
+  };
+  ReviewDetail: { 
+    reviewId: string;
+    showComments?: boolean;
+  };
+  Profile: { userId: string };
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -239,6 +266,30 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen 
           name="AllChallenges" 
           component={AllChallengesScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="CreateReview" 
+          component={CreateReviewScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ReviewDetail" 
+          component={ReviewDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',

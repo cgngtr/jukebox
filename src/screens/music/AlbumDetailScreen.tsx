@@ -6,7 +6,8 @@ import {
   Image, 
   ScrollView, 
   TouchableOpacity, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
@@ -14,41 +15,72 @@ import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius } from '../../styles';
 import { music } from '../../api';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { usePlayer } from '../../context/PlayerContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ReviewList } from '../../components/reviews';
+import { getReviewsByItem } from '../../api/reviews';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../navigation/AppNavigator';
 
-const AlbumDetailScreen = () => {
+// Define the route params type
+type AlbumDetailParams = {
+  albumId: string;
+  albumName?: string;
+  artistName?: string;
+  coverUrl?: string;
+};
+
+type RootStackParamList = {
+  AlbumDetail: AlbumDetailParams;
+};
+
+type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
+
+type AlbumDetailRouteProp = RouteProp<AppStackParamList, 'AlbumDetail'>;
+
+const AlbumDetailScreen: React.FC = () => {
   const { theme } = useTheme();
   const { getToken } = useAuth();
-  const navigation = useNavigation();
-  const route = useRoute();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<AlbumDetailRouteProp>();
+  const routeParams = route.params || {}; 
+  const albumId = routeParams.albumId || routeParams.id || '';
+  const { albumName, artistName, coverUrl } = routeParams;
   const [album, setAlbum] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // @ts-ignore
-  const { id } = route.params;
+  const [activeTab, setActiveTab] = useState<'tracks' | 'reviews'>('tracks');
+  const [reviewsCount, setReviewsCount] = useState(0);
+  const windowWidth = Dimensions.get('window').width;
   
   const player = usePlayer();
   
+  // Ekranın hangi modda olduğunu izlemek için yeni state
+  const [screenMode, setScreenMode] = useState<'tracks' | 'reviews'>('tracks');
+  
   useEffect(() => {
     loadAlbumData();
-  }, [id]);
+  }, [albumId]);
   
   const loadAlbumData = async () => {
     setLoading(true);
-    setError(null);
-    
     try {
+      // Ensure we have a token and albumId
       const token = await getToken();
-      if (!token) throw new Error('Authentication required');
-      
-      // Get album details
-      const albumData = await music.getAlbum(token, id);
+      if (!token || !albumId) {
+        throw new Error('Missing token or album ID');
+      }
+
+      // Fetch album data
+      const albumData = await music.getAlbum(token, albumId);
       setAlbum(albumData);
-    } catch (error: any) {
+      
+      // Fetch review count
+      const { count } = await getReviewsByItem(albumId, 'album', 1, 1);
+      setReviewsCount(count);
+    } catch (error) {
       console.error('Error loading album data:', error);
-      setError(error.message || 'Failed to load album data');
     } finally {
       setLoading(false);
     }
@@ -72,6 +104,24 @@ const AlbumDetailScreen = () => {
     } catch (error) {
       console.error('Track playback error:', error);
     }
+  };
+  
+  // Navigate to the write review screen
+  const handleWriteReview = () => {
+    if (!albumId) return;
+    
+    navigation.navigate('CreateReview', {
+      itemId: albumId,
+      itemType: 'album',
+      itemName: album?.name,
+      itemImage: album?.images?.[0]?.url
+    });
+  };
+  
+  // Tab'a tıklandığında hem activeTab hem de screenMode'u güncelleme
+  const handleTabPress = (tab: 'tracks' | 'reviews') => {
+    setActiveTab(tab);
+    setScreenMode(tab);
   };
   
   if (loading) {
@@ -115,23 +165,33 @@ const AlbumDetailScreen = () => {
   
   if (!album) return null;
   
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Album Header */}
+  // Track listesi içeren ekran
+  const renderTracksScreen = () => (
+    <ScrollView 
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header bölümü */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Cover art ve bilgi */}
+      <LinearGradient
+        colors={[`${theme.colors.primary}30`, theme.colors.background]}
+        style={styles.albumGradient}
+      >
         <View style={styles.albumHeader}>
           <Image 
             source={{ uri: album.images[0]?.url || 'https://via.placeholder.com/300' }}
-            style={styles.albumCover}
+            style={[styles.albumCover, {
+              shadowColor: theme.colors.text.primary,
+              borderColor: theme.colors.background === '#121212' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+            }]}
           />
           <Text style={[styles.albumTitle, { color: theme.colors.text.primary }]}>
             {album.name}
@@ -150,44 +210,224 @@ const AlbumDetailScreen = () => {
             {album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)} • {album.release_date.split('-')[0]} • {album.total_tracks} songs
           </Text>
         </View>
+      </LinearGradient>
+      
+      {/* Tab navigation */}
+      <View style={[styles.tabContainer, { borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            { width: windowWidth / 2 }
+          ]}
+          onPress={() => handleTabPress('tracks')}
+        >
+          <Text 
+            style={[
+              styles.tabText,
+              { color: activeTab === 'tracks' ? theme.colors.primary : theme.colors.text.secondary }
+            ]}
+          >
+            Tracks
+          </Text>
+          {activeTab === 'tracks' && (
+            <View style={[styles.activeTabIndicator, { backgroundColor: theme.colors.primary }]} />
+          )}
+        </TouchableOpacity>
         
-        {/* Tracks Section */}
-        <View style={styles.section}>
-          {album.tracks.items.map((track: any, index: number) => (
-            <React.Fragment key={track.id}>
-              <TouchableOpacity 
-                style={styles.trackItem}
-                onPress={() => {
-                  // @ts-ignore
-                  navigation.navigate('TrackDetail', { id: track.id });
-                }}
-              >
-                <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
-                  {index + 1}
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            { width: windowWidth / 2 }
+          ]}
+          onPress={() => handleTabPress('reviews')}
+        >
+          <Text 
+            style={[
+              styles.tabText,
+              { color: activeTab === 'reviews' ? theme.colors.primary : theme.colors.text.secondary }
+            ]}
+          >
+            Reviews ({reviewsCount})
+          </Text>
+          {activeTab === 'reviews' && (
+            <View style={[styles.activeTabIndicator, { backgroundColor: theme.colors.primary }]} />
+          )}
+        </TouchableOpacity>
+      </View>
+      
+      {/* Şarkı listesi */}
+      <View style={styles.trackListContainer}>
+        {album.tracks.items.map((track: any, index: number) => (
+          <TouchableOpacity 
+            key={track.id}
+            style={[
+              styles.trackItem, 
+              { borderBottomColor: theme.colors.divider }
+            ]}
+            onPress={() => handlePlayTrack(track, index)}
+          >
+            <View style={styles.trackIndexContainer}>
+              <Text style={[styles.trackIndex, { color: theme.colors.text.secondary }]}>
+                {index + 1}
+              </Text>
+            </View>
+            <View style={styles.trackInfo}>
+              <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
+                {track.name}
+              </Text>
+              <View style={styles.trackArtists}>
+                {track.explicit && (
+                  <View style={[styles.explicitBadge, { backgroundColor: theme.colors.text.secondary }]}>
+                    <Text style={styles.explicitText}>E</Text>
+                  </View>
+                )}
+                <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
+                  {track.artists.map((artist: any) => artist.name).join(', ')}
                 </Text>
-                <View style={styles.trackInfo}>
-                  <Text style={[styles.trackName, { color: theme.colors.text.primary }]}>
-                    {track.name}
-                  </Text>
-                  <Text style={[styles.trackArtist, { color: theme.colors.text.secondary }]}>
-                    {track.explicit && <Text>🅴 </Text>}
-                    {track.artists.map((a: any) => a.name).join(', ')}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.playButton}
-                  onPress={() => handlePlayTrack(track, index)}
-                >
-                  <Ionicons name="play" size={22} color={theme.colors.primary} />
-                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.trackControls}>
+              <Text style={[styles.trackDuration, { color: theme.colors.text.secondary }]}>
+                {Math.floor(track.duration_ms / 60000)}:
+                {(Math.floor((track.duration_ms % 60000) / 1000) < 10 ? '0' : '')}
+                {Math.floor((track.duration_ms % 60000) / 1000)}
+              </Text>
+              <TouchableOpacity style={styles.trackOptions}>
+                <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.text.secondary} />
               </TouchableOpacity>
-              {index < album.tracks.items.length - 1 && (
-                <View style={[styles.trackDivider, { backgroundColor: theme.colors.text.primary }]} />
-              )}
-            </React.Fragment>
-          ))}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+  
+  // Reviews ekranı
+  const renderReviewsScreen = () => (
+    <ScrollView 
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header bölümü */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Cover art ve bilgi */}
+      <LinearGradient
+        colors={[`${theme.colors.primary}30`, theme.colors.background]}
+        style={styles.albumGradient}
+      >
+        <View style={styles.albumHeader}>
+          <Image 
+            source={{ uri: album.images[0]?.url || 'https://via.placeholder.com/300' }}
+            style={[styles.albumCover, {
+              shadowColor: theme.colors.text.primary,
+              borderColor: theme.colors.background === '#121212' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+            }]}
+          />
+          <Text style={[styles.albumTitle, { color: theme.colors.text.primary }]}>
+            {album.name}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              // @ts-ignore
+              navigation.navigate('ArtistDetail', { id: album.artists[0].id });
+            }}
+          >
+            <Text style={[styles.albumArtist, { color: theme.colors.primary }]}>
+              {album.artists.map((a: any) => a.name).join(', ')}
+            </Text>
+          </TouchableOpacity>
+          <Text style={[styles.albumInfo, { color: theme.colors.text.secondary }]}>
+            {album.album_type.charAt(0).toUpperCase() + album.album_type.slice(1)} • {album.release_date.split('-')[0]} • {album.total_tracks} songs
+          </Text>
         </View>
-      </ScrollView>
+      </LinearGradient>
+      
+      {/* Tab navigation */}
+      <View style={[styles.tabContainer, { borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            { width: windowWidth / 2 }
+          ]}
+          onPress={() => handleTabPress('tracks')}
+        >
+          <Text 
+            style={[
+              styles.tabText,
+              { color: activeTab === 'tracks' ? theme.colors.primary : theme.colors.text.secondary }
+            ]}
+          >
+            Tracks
+          </Text>
+          {activeTab === 'tracks' && (
+            <View style={[styles.activeTabIndicator, { backgroundColor: theme.colors.primary }]} />
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            { width: windowWidth / 2 }
+          ]}
+          onPress={() => handleTabPress('reviews')}
+        >
+          <Text 
+            style={[
+              styles.tabText,
+              { color: activeTab === 'reviews' ? theme.colors.primary : theme.colors.text.secondary }
+            ]}
+          >
+            Reviews ({reviewsCount})
+          </Text>
+          {activeTab === 'reviews' && (
+            <View style={[styles.activeTabIndicator, { backgroundColor: theme.colors.primary }]} />
+          )}
+        </TouchableOpacity>
+      </View>
+      
+      {/* Reviews section */}
+      <View style={styles.reviewsContainer}>
+        <View style={styles.reviewsHeader}>
+          <Text style={[styles.reviewsSectionTitle, { color: theme.colors.text.primary }]}>
+            Reviews
+          </Text>
+          <TouchableOpacity 
+            style={[styles.writeReviewButton, { backgroundColor: theme.colors.primary }]}
+            onPress={handleWriteReview}
+          >
+            <Ionicons name="create-outline" size={18} color="#fff" style={styles.writeReviewIcon} />
+            <Text style={styles.writeReviewText}>Write a Review</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <ReviewList 
+          itemId={albumId}
+          itemType="album"
+          onReviewPress={(review) => 
+            navigation.navigate('ReviewDetail', { reviewId: review.id })
+          }
+          onLikePress={(review) => 
+            console.log('Like pressed for review:', review.id)
+          }
+          onCommentPress={(review) => 
+            navigation.navigate('ReviewDetail', { reviewId: review.id, showComments: true })
+          }
+          emptyStateMessage="No reviews yet for this album. Be the first to share your thoughts!"
+        />
+      </View>
+    </ScrollView>
+  );
+  
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {screenMode === 'tracks' ? renderTracksScreen() : renderReviewsScreen()}
     </SafeAreaView>
   );
 };
@@ -196,107 +436,186 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: spacing.base,
+    marginTop: 12,
     fontSize: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xl,
+    padding: 20,
   },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 20,
   },
   retryButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
-  section: {
-    marginBottom: spacing.xl,
+  albumGradient: {
+    paddingTop: 20,
+    paddingBottom: 40,
   },
-  
-  // Album styles
   albumHeader: {
     alignItems: 'center',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 16,
   },
   albumCover: {
     width: 200,
     height: 200,
-    borderRadius: 8,
-    marginBottom: spacing.lg,
+    borderRadius: 12,
+    marginBottom: 24,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 0.5,
   },
   albumTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
+    fontWeight: '700',
     textAlign: 'center',
+    marginBottom: 8,
   },
   albumArtist: {
-    fontSize: 16,
-    marginBottom: spacing.sm,
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   albumInfo: {
     fontSize: 14,
     textAlign: 'center',
   },
-  
-  // Track item styles
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    borderBottomWidth: 1,
+    marginTop: -20,
+    backgroundColor: 'transparent',
+  },
+  tabButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 3,
+    width: '40%',
+    borderRadius: 3,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  trackListContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
   trackItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+  },
+  trackIndexContainer: {
+    width: 30,
+    alignItems: 'center',
   },
   trackIndex: {
-    fontSize: 16,
-    width: 30,
-    textAlign: 'center',
+    fontSize: 14,
   },
   trackInfo: {
     flex: 1,
-    marginRight: spacing.sm,
+    marginLeft: 12,
   },
   trackName: {
     fontSize: 16,
     fontWeight: '500',
+    marginBottom: 4,
+  },
+  trackArtists: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   trackArtist: {
     fontSize: 14,
-    marginTop: 2,
   },
-  playButton: {
-    padding: spacing.xs,
+  explicitBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
   },
-  trackDivider: {
-    height: 1,
-    marginHorizontal: spacing.lg,
-    opacity: 0.08,
+  explicitText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  trackControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  trackDuration: {
+    fontSize: 14,
+    marginRight: 12,
+  },
+  trackOptions: {
+    padding: 5,
+  },
+  reviewsContainer: {
+    padding: 16,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  reviewsSectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  writeReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  writeReviewIcon: {
+    marginRight: 6,
+  },
+  writeReviewText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 

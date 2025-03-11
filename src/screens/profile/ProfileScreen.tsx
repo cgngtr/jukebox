@@ -21,7 +21,7 @@ import {
   MaterialIcons, 
   MaterialCommunityIcons 
 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { music } from '../../api';
 import { SpotifyPlaylist, SpotifyArtist, SpotifyTrack } from '../../services/musicApi';
@@ -41,6 +41,16 @@ interface UserProfile {
     songsLiked: number;
   }
 }
+
+type ProfileParams = {
+  userId: string;
+};
+
+type RootStackParamList = {
+  Profile: ProfileParams;
+};
+
+type ProfileRouteProp = RouteProp<RootStackParamList, 'Profile'>;
 
 const styles = StyleSheet.create<{
   container: ViewStyle;
@@ -400,6 +410,8 @@ const ProfileScreen: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
   const navigation = useNavigation();
   const { user, getToken, isAuthenticated } = useAuth();
+  const route = useRoute<ProfileRouteProp>();
+  const { userId } = route.params;
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [recentPlaylists, setRecentPlaylists] = useState<SpotifyPlaylist[]>([]);
