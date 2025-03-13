@@ -1,6 +1,18 @@
 import { supabase } from './supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
+/**
+ * Generate a UUID v4 compatible string
+ * @returns A UUID v4 string
+ */
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Define a simplified User interface that matches what we need for review creation
 export interface UserBase {
   id: string;
@@ -142,13 +154,7 @@ export async function createReview(
         console.log(`User with Spotify ID ${userId} not found in database, creating one`);
         
         // Benzersiz bir kullanıcı UUID'si oluştur
-        const createUUID = () => {
-          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
-        };
+        const createUUID = () => generateUUID();
         
         const newUserId = createUUID();
         
@@ -180,7 +186,7 @@ export async function createReview(
       console.log('Creating review in development mode or without active session');
       
       // Benzersiz bir inceleme ID'si oluştur
-      const reviewId = crypto.randomUUID ? crypto.randomUUID() : `review_${Date.now()}`;
+      const reviewId = generateUUID();
       
       // İnceleme verilerini oluştur
       const reviewData = {

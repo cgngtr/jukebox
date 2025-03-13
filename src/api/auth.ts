@@ -10,6 +10,18 @@ const REFRESH_TOKEN_KEY = 'spotify_refresh_token';
 const TOKEN_EXPIRY_KEY = 'spotify_token_expiry';
 const USER_ID_KEY = 'user_id';
 
+/**
+ * Generate a UUID v4 compatible string
+ * @returns A UUID v4 string
+ */
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Yetkilendirme ile ilgili API fonksiyonları
 export const auth = {
   // Spotify oturum açma URL'sini oluştur
@@ -69,16 +81,22 @@ export const auth = {
           await AsyncStorage.setItem(USER_ID_KEY, supabaseUserId);
           console.log(`User ID saved to AsyncStorage: ${supabaseUserId}`);
         } else {
-          console.warn('Supabase auth failed, will continue with Spotify auth only');
-          // Hata olsa bile Spotify kimliğiyle devam et
-          await AsyncStorage.setItem(USER_ID_KEY, appUser.id);
-          console.log(`Fallback: Using Spotify ID as user identifier: ${appUser.id}`);
+          console.warn('Supabase auth failed to return a valid user ID');
+          // Benzersiz bir UUID oluştur
+          const newUuid = generateUUID();
+          
+          console.log(`Using a generated UUID as fallback: ${newUuid}`);
+          await AsyncStorage.setItem(USER_ID_KEY, newUuid);
+          supabaseUserId = newUuid;
         }
       } catch (authError: any) {
         console.error('Error during Supabase authentication:', authError.message);
-        // Kimlik doğrulama hatası durumunda Spotify ID'yi kullan
-        await AsyncStorage.setItem(USER_ID_KEY, appUser.id);
-        supabaseUserId = appUser.id;
+        // Kimlik doğrulama hatası durumunda UUID oluştur
+        const errorUuid = generateUUID();
+        
+        console.log(`Using a generated UUID due to auth error: ${errorUuid}`);
+        await AsyncStorage.setItem(USER_ID_KEY, errorUuid);
+        supabaseUserId = errorUuid;
       }
       
       // 7. Veritabanı profil bilgilerini kaydet/güncelle
@@ -119,18 +137,84 @@ export const auth = {
       
       console.log(`Attempting to authenticate user with email: ${email}`);
       
-      // 1. Kullanıcının zaten var olup olmadığını kontrol et
-      // Önce oturum açmayı dene
+      // UUID formatını kontrol eden regex
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      // PRIORITY 1: First check if this Spotify ID already exists in the database
+      // This is now the FIRST step to ensure consistency
+      console.log(`Checking if Spotify ID ${spotifyUser.id} already exists in database...`);
+      const { data: existingUserData, error: existingUserError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('spotify_id', spotifyUser.id)
+        .single();
+      
+      // If user exists in database, try to use that existing UUID for authentication
+      if (!existingUserError && existingUserData && existingUserData.id) {
+        console.log(`Found existing user with Spotify ID ${spotifyUser.id} in database, UUID: ${existingUserData.id}`);
+        
+        // Try to sign in with the existing ID's account
+        try {
+          // First check if there's already an active session
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (sessionData?.session) {
+            console.log('User already has an active session');
+            return existingUserData.id;
+          }
+          
+          // Try to sign in with the email
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: `spotify_${spotifyUser.id}` // Standard password pattern
+          });
+          
+          if (!signInError && signInData?.user) {
+            console.log('Successfully signed in with existing user email');
+            return existingUserData.id;
+          } else {
+            console.log('Failed to sign in with existing credentials, will try to update auth user');
+            
+            // Create a new auth user but with the EXISTING database ID
+            const password = generateSecurePassword(spotifyUser.id);
+            
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+              email: email,
+              password: password,
+              options: {
+                data: {
+                  spotify_id: spotifyUser.id,
+                  display_name: spotifyUser.display_name,
+                  existing_user_id: existingUserData.id // Pass existing ID as metadata
+                }
+              }
+            });
+            
+            if (!signUpError && signUpData?.user) {
+              console.log('Created new auth user for existing database record');
+              // Return the existing database ID, not the new auth ID
+              return existingUserData.id;
+            }
+          }
+        } catch (authError) {
+          console.error('Error during auth operations for existing user:', authError);
+        }
+        
+        // Even if auth fails, we'll use the existing database ID
+        return existingUserData.id;
+      }
+      
+      // PRIORITY 2: Try to sign in with existing credentials
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: email,
-        password: `spotify_${spotifyUser.id}` // Basit şifre stratejisi
+        password: `spotify_${spotifyUser.id}` // Simple password strategy
       });
       
-      // Başarılı giriş - kullanıcı var
+      // Successful login - user exists
       if (signInData && signInData.user) {
         console.log('User successfully signed in to Supabase');
         
-        // Kullanıcı meta verilerini güncelle
+        // Update user metadata
         const { error: updateError } = await supabase.auth.updateUser({
           data: {
             spotify_id: spotifyUser.id,
@@ -144,67 +228,68 @@ export const auth = {
           console.warn('Failed to update user metadata:', updateError.message);
         }
         
-        // Users tablosundaki profiline devam et
-        return signInData.user.id;
-      }
-      
-      // Kullanıcı mevcut değil veya şifre yanlış
-      if (signInError) {
-        console.log('Sign in error:', signInError.message);
-        
-        // 2. Kullanıcı bulunamadıysa yeni kayıt oluştur
-        if (signInError.message.includes('Invalid login credentials')) {
-          console.log('User not found, creating new account');
-          
-          // Güçlü bir şifre oluştur
-          const password = generateSecurePassword(spotifyUser.id);
-          
-          // Yeni kullanıcı oluştur
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              data: {
-                spotify_id: spotifyUser.id,
-                display_name: spotifyUser.display_name,
-                avatar_url: spotifyUser.avatar_url || 
-                  (spotifyUser.images && spotifyUser.images.length > 0 ? spotifyUser.images[0].url : null)
-              }
-            }
-          });
-          
-          if (signUpError) {
-            // Kayıt hatası - kullanıcı muhtemelen zaten var
-            if (signUpError.message.includes('already registered')) {
-              console.log('User already exists but password mismatch, handling special case');
-              
-              // Şifre sıfırlama e-postası gönder (opsiyonel, kullanmak istiyorsanız)
-              // await supabase.auth.resetPasswordForEmail(email);
-              
-              // Bu durum için Spotify ID'yi kullan
-              return spotifyUser.id;
-            }
-            
-            // Diğer kayıt hataları
-            console.error('Error during signup:', signUpError.message);
-            return '';
-          }
-          
-          // Başarılı kayıt
-          if (signUpData.user) {
-            console.log('New user successfully created in Supabase');
-            return signUpData.user.id;
-          }
+        // Check UUID format
+        if (uuidRegex.test(signInData.user.id)) {
+          // Continue with the user profile
+          return signInData.user.id;
+        } else {
+          console.warn(`User ID ${signInData.user.id} is not a valid UUID, generating a new one`);
+          return generateUUID();
         }
       }
       
-      // Fallback - dış sistemlerle entegrasyon sorunlarında Spotify ID'yi kullan
-      console.warn('Using Spotify ID as fallback due to auth issues');
-      return spotifyUser.id;
+      // PRIORITY 3: User not found, create new account
+      if (signInError && signInError.message.includes('Invalid login credentials')) {
+        console.log('User not found, creating new account');
+        
+        // Generate a strong password
+        const password = generateSecurePassword(spotifyUser.id);
+        
+        // Create a consistent UUID based on Spotify ID
+        // This makes the UUID deterministic based on Spotify ID
+        const deterministicUuid = generateDeterministicUUID(spotifyUser.id);
+        console.log(`Generated deterministic UUID ${deterministicUuid} for Spotify ID ${spotifyUser.id}`);
+        
+        // Create new user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              spotify_id: spotifyUser.id,
+              display_name: spotifyUser.display_name,
+              avatar_url: spotifyUser.avatar_url || 
+                (spotifyUser.images && spotifyUser.images.length > 0 ? spotifyUser.images[0].url : null)
+            }
+          }
+        });
+        
+        // Successful registration
+        if (!signUpError && signUpData.user) {
+          console.log('New user successfully created in Supabase');
+          
+          // Use the deterministic UUID instead of the random Supabase one
+          // This way, future logins will use the same UUID
+          return deterministicUuid;
+        }
+        
+        // Registration error - user may already exist with a different password
+        if (signUpError && signUpError.message.includes('already registered')) {
+          console.log('Email already registered but password mismatch, using deterministic UUID');
+          return deterministicUuid;
+        }
+        
+        // Other registration errors
+        console.error('Error during signup:', signUpError?.message);
+      }
+      
+      // PRIORITY 4: Fallback - generate a deterministic UUID
+      console.warn('Authentication flow could not determine a valid UUID, using deterministic UUID');
+      return generateDeterministicUUID(spotifyUser.id);
     } catch (error: any) {
       console.error('Authentication error:', error.message);
-      // Kimlik doğrulama başarısız - Spotify ID ile devam et
-      return spotifyUser.id;
+      // Create a determinist ic UUID based on Spotify ID
+      return generateDeterministicUUID(spotifyUser.id);
     }
   },
 
@@ -213,8 +298,34 @@ export const auth = {
     try {
       console.log('💾 Kullanıcı profilini veritabanına kaydediyorum...');
       
-      // Anonim veya yetkilendirilmemiş erişim için spotify_id kullanılabilir
-      const userIdentifier = userId || spotifyUser.id;
+      // UUID formatını kontrol et
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      let userIdentifier = userId || spotifyUser.id;
+      
+      // Eğer ID UUID formatında değilse ve bir Spotify ID'si ise, 
+      // önce bu Spotify ID'ye sahip kullanıcıyı veritabanında ara
+      if (!uuidRegex.test(userIdentifier)) {
+        console.log(`Kullanıcı ID (${userIdentifier}) UUID formatında değil, veritabanında kontrol ediyorum...`);
+        
+        // Spotify ID'si ile kullanıcıyı ara
+        const { data: existingData, error: existingError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('spotify_id', spotifyUser.id)
+          .single();
+        
+        if (!existingError && existingData && existingData.id) {
+          console.log(`Spotify ID (${spotifyUser.id}) ile eşleşen kullanıcı bulundu, veritabanı ID'si kullanılıyor: ${existingData.id}`);
+          userIdentifier = existingData.id;
+        } else {
+          // Kullanıcı bulunamadı, yeni UUID oluştur
+          const newUuid = generateUUID();
+          
+          console.log(`UUID formatında olmayan ID için yeni UUID oluşturuldu: ${newUuid}`);
+          userIdentifier = newUuid;
+        }
+      }
+      
       console.log(`Kullanıcı ID: ${userIdentifier}, Spotify ID: ${spotifyUser.id}`);
       
       // Kullanıcı verilerini hazırla
@@ -571,6 +682,33 @@ const generateSecurePassword = (spotifyId: string): string => {
   const timestamp = Date.now().toString(36);
   return `sp_${spotifyId}_${randomPart}_${timestamp}`;
 };
+
+/**
+ * Generates a deterministic UUID based on a input string (Spotify ID)
+ * This ensures the same Spotify ID always maps to the same UUID
+ */
+function generateDeterministicUUID(input: string): string {
+  // Simple hash function to convert string to number
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Use the hash to seed the UUID generation
+  const seededRandom = (index: number) => {
+    const x = Math.sin(hash + index) * 10000;
+    return Math.floor((x - Math.floor(x)) * 16);
+  };
+  
+  // Generate UUID pattern with deterministic values
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c, i) => {
+    const r = seededRandom(i);
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 /**
  * Supabase ve Spotify entegrasyonunu test et
