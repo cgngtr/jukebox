@@ -302,21 +302,56 @@ export const auth = {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       let userIdentifier = userId || spotifyUser.id;
       
-      // Eğer ID UUID formatında değilse ve bir Spotify ID'si ise, 
-      // önce bu Spotify ID'ye sahip kullanıcıyı veritabanında ara
+      // İlk adım olarak, bu Spotify ID'ye sahip kullanıcı zaten var mı kontrol et
+      console.log(`Kullanıcı ID: ${userIdentifier}, Spotify ID: ${spotifyUser.id}`);
+      console.log('🔍 Önce veritabanında mevcut kullanıcı kontrolü yapılıyor...');
+      
+      const { data: existingData, error: existingError } = await supabase
+        .from('users')
+        .select('id, spotify_id, display_name, email, avatar_url')
+        .eq('spotify_id', spotifyUser.id)
+        .maybeSingle();
+      
+      // Eğer kullanıcı zaten varsa, sadece gerekli alanları güncelle ve ID'yi döndür
+      if (!existingError && existingData && existingData.id) {
+        console.log(`✅ Spotify ID (${spotifyUser.id}) ile eşleşen kullanıcı bulundu, ID: ${existingData.id}`);
+        
+        // Sadece belirli alanları güncelle
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            display_name: spotifyUser.display_name || existingData.display_name,
+            email: spotifyUser.email || existingData.email,
+            avatar_url: spotifyUser.avatar_url || 
+              (spotifyUser.images && spotifyUser.images.length > 0 ? spotifyUser.images[0].url : existingData.avatar_url),
+            last_login: new Date().toISOString()
+          })
+          .eq('id', existingData.id);
+        
+        if (!updateError) {
+          console.log('✅ Mevcut kullanıcı bilgileri güncellendi');
+        } else {
+          console.warn('⚠️ Kullanıcı bulundu ama güncelleme başarısız oldu:', updateError.message);
+        }
+        
+        return existingData.id;
+      }
+      
+      // Eğer kullanıcı yoksa veya hata oluştuysa, kontrol işlemlerine devam et
+      // Eğer ID UUID formatında değilse, yeni UUID oluştur veya mevcut kullanıcıyı bul
       if (!uuidRegex.test(userIdentifier)) {
         console.log(`Kullanıcı ID (${userIdentifier}) UUID formatında değil, veritabanında kontrol ediyorum...`);
         
-        // Spotify ID'si ile kullanıcıyı ara
-        const { data: existingData, error: existingError } = await supabase
+        // Spotify ID'si ile kullanıcıyı ara (yukarıdaki kontrol başarısız olduysa tekrar dene)
+        const { data: userData, error: userError } = await supabase
           .from('users')
           .select('id')
           .eq('spotify_id', spotifyUser.id)
           .single();
         
-        if (!existingError && existingData && existingData.id) {
-          console.log(`Spotify ID (${spotifyUser.id}) ile eşleşen kullanıcı bulundu, veritabanı ID'si kullanılıyor: ${existingData.id}`);
-          userIdentifier = existingData.id;
+        if (!userError && userData && userData.id) {
+          console.log(`Spotify ID (${spotifyUser.id}) ile eşleşen kullanıcı bulundu, veritabanı ID'si kullanılıyor: ${userData.id}`);
+          userIdentifier = userData.id;
         } else {
           // Kullanıcı bulunamadı, yeni UUID oluştur
           const newUuid = generateUUID();
@@ -325,8 +360,6 @@ export const auth = {
           userIdentifier = newUuid;
         }
       }
-      
-      console.log(`Kullanıcı ID: ${userIdentifier}, Spotify ID: ${spotifyUser.id}`);
       
       // Kullanıcı verilerini hazırla
       const userData = {
@@ -348,7 +381,7 @@ export const auth = {
       const { data, error } = await supabase
         .from('users')
         .upsert(userData, { 
-          onConflict: 'id' // ID çakışması durumunda güncelle
+          onConflict: 'id,spotify_id' // ID veya spotify_id çakışması durumunda güncelle
         });
       
       if (!error) {
@@ -359,21 +392,8 @@ export const auth = {
       // Hata durumunda alternatif stratejileri dene
       console.error('❌ Veritabanı operasyonu başarısız:', error.message);
       
-      // Strateji 2: Doğrudan INSERT dene
-      console.log('🔄 Alternatif strateji 1: Direkt INSERT deniyorum...');
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert(userData);
-      
-      if (!insertError) {
-        console.log('✅ INSERT stratejisiyle kullanıcı kaydedildi');
-        return userIdentifier;
-      }
-      
-      console.error('❌ INSERT stratejisi başarısız:', insertError.message);
-      
-      // Strateji 3: Önce varolan kaydı kontrol et
-      console.log('🔄 Alternatif strateji 2: Önce SELECT ile kullanıcı kontrolü...');
+      // Strateji 2: Önce varolan kaydı kontrol et ve sadece UPDATE yap
+      console.log('🔄 Alternatif strateji 1: UPDATE stratejisi deneniyor...');
       const { data: existingUser, error: selectError } = await supabase
         .from('users')
         .select('id, spotify_id')
@@ -401,12 +421,12 @@ export const auth = {
         console.error('❌ UPDATE stratejisi başarısız:', updateError.message);
       }
       
-      // Strateji 4: Serbestçe erişilebilen, public tablosunu farklı isimle kontrol et
-      console.log('🔄 Alternatif strateji 3: Public tabloyu kontrol ediyorum...');
+      // Strateji 3: Admin istemcisi ile dene
+      console.log('🔄 Alternatif strateji 2: Admin istemcisi deneniyor...');
       try {
         const { error: publicError } = await supabaseAdmin
           .from('users')
-          .upsert(userData, { onConflict: 'id' });
+          .upsert(userData, { onConflict: 'id,spotify_id' });
           
         if (!publicError) {
           console.log('✅ Admin istemcisi ile kullanıcı kaydedildi');
@@ -416,7 +436,7 @@ export const auth = {
         console.error('❌ Admin erişimi başarısız:', adminError.message);
       }
       
-      // Strateji 5: Son çare olarak AsyncStorage'a kaydet
+      // Strateji 4: Son çare olarak AsyncStorage'a kaydet
       console.log('🔄 Son çare: AsyncStorage\'a kullanıcı bilgilerini kaydediyorum...');
       await AsyncStorage.setItem('current_user', JSON.stringify(userData));
       console.log('✅ Kullanıcı bilgileri yerel depolamaya kaydedildi');

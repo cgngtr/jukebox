@@ -361,15 +361,6 @@ const ArtistDetailScreen = () => {
           >
             <Ionicons name="arrow-back" size={24} color={theme.colors.text.primary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.discoverButton}
-            onPress={navigateToDiscovery}
-          >
-            <Text style={[styles.discoverButtonText, { color: theme.colors.primary }]}>
-              Discover similar
-            </Text>
-            <Ionicons name="compass-outline" size={18} color={theme.colors.primary} />
-          </TouchableOpacity>
         </View>
         
         {/* Artist Header */}
@@ -397,38 +388,6 @@ const ArtistDetailScreen = () => {
               </View>
             ))}
           </View>
-          
-          {/* Follow Button */}
-          <TouchableOpacity
-            style={[
-              styles.followButton,
-              { backgroundColor: isFollowing ? 'transparent' : theme.colors.primary,
-                borderColor: theme.colors.primary,
-                borderWidth: isFollowing ? 1 : 0 }
-            ]}
-            onPress={toggleFollow}
-            disabled={followLoading}
-          >
-            {followLoading ? (
-              <ActivityIndicator size="small" color={isFollowing ? theme.colors.primary : 'white'} />
-            ) : (
-              <>
-                <Ionicons 
-                  name={isFollowing ? "checkmark" : "add"} 
-                  size={18} 
-                  color={isFollowing ? theme.colors.primary : 'white'} 
-                />
-                <Text 
-                  style={[
-                    styles.followButtonText, 
-                    { color: isFollowing ? theme.colors.primary : 'white' }
-                  ]}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
 
         {/* Popular Tracks Section */}
